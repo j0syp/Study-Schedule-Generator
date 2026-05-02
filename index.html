@@ -42,8 +42,30 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="input-time">Час (хвилини)</label>
-                <input type="number" id="input-time" placeholder="120" min="30" max="600" step="30" required />
-                <div class="error-text" id="error-time">Від 30 до 600 хв</div>
+                <select id="input-time" required>
+                  <option value="" disabled selected>Оберіть час</option>
+                  <option value="30">30 хв</option>
+                  <option value="60">1 год</option>
+                  <option value="90">1.5 год</option>
+                  <option value="120">2 год</option>
+                  <option value="150">2.5 год</option>
+                  <option value="180">3 год</option>
+                  <option value="210">3.5 год</option>
+                  <option value="240">4 год</option>
+                  <option value="270">4.5 год</option>
+                  <option value="300">5 год</option>
+                  <option value="330">5.5 год</option>
+                  <option value="360">6 год</option>
+                  <option value="390">6.5 год</option>
+                  <option value="420">7 год</option>
+                  <option value="450">7.5 год</option>
+                  <option value="480">8 год</option>
+                  <option value="510">8.5 год</option>
+                  <option value="540">9 год</option>
+                  <option value="570">9.5 год</option>
+                  <option value="600">10 год</option>
+                </select>
+                <div class="error-text" id="error-time">Оберіть тривалість завдання</div>
               </div>
 
               <div class="form-group">

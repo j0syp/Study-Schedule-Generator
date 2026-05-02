@@ -41,6 +41,7 @@ function setFormLocked(locked) {
   inputDlDay.disabled = locked;
   inputDlMonth.disabled = locked;
   inputDlYear.disabled = locked;
+  btnDeleteAllSubjects.disabled = locked;
 }
 
 // Initialize
@@ -85,6 +86,7 @@ function saveSchedule() {
 }
 
 async function loadDemoData() {
+  cancelEdit();
   try {
     const res = await fetch('./data/demo-data.json');
     if (res.ok) {
@@ -173,7 +175,7 @@ function validateForm() {
   }
 
   const timeVal = parseInt(inputTime.value, 10);
-  if (isNaN(timeVal) || timeVal < 30 || timeVal > 600) {
+  if (isNaN(timeVal)) {
     inputTime.parentElement.classList.add('invalid');
     isValid = false;
   } else {
@@ -300,6 +302,7 @@ function editSubject(id) {
 function deleteAllSubjects() {
   if (subjects.length === 0) return;
   if (confirm('Ви впевнені, що хочете видалити ВСІ предмети зі списку?')) {
+    cancelEdit();
     subjects = [];
     saveData();
     renderSubjects();
