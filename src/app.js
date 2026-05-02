@@ -256,22 +256,53 @@ function renderSubjects() {
 
 // Generation Logic
 function generateSchedule() {
-  // Sort subjects by Deadline, then by Priority (Високий > Середній > Низький)
   const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
   
-  const sorted = [...subjects].sort((a, b) => {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Classify all subjects into Cat V, B, A
+  let catV = [];
+  let catB = [];
+  let catA = [];
+
+  for (const subj of subjects) {
+    let dVal = new Date(0);
+    if (subj.deadline) {
+      const [y, m, d] = subj.deadline.split('-');
+      dVal = new Date(y, m - 1, d);
+    }
+    const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
+    const daysAvailable = Math.max(1, daysUntilDeadline + 1);
+
+    const minReq = Math.ceil(subj.time / daysAvailable);
+    const s = { ...subj, daysAvailable };
+
+    if (minReq > 240) {
+      catV.push(s);
+    } else if (minReq > 120) {
+      catB.push(s);
+    } else {
+      catA.push(s);
+    }
+  }
+
+  // Sort function
+  const sortFn = (a, b) => {
     const dateA = new Date(a.deadline).getTime();
     const dateB = new Date(b.deadline).getTime();
     if (dateA !== dateB) return dateA - dateB;
     return priorityWeight[b.priority] - priorityWeight[a.priority];
-  });
+  };
+
+  catV.sort(sortFn);
+  catB.sort(sortFn);
+  catA.sort(sortFn);
 
   schedule = [];
   const MAX_PER_DAY = 240;
   const dayLoads = new Array(365).fill(0); // Arbitrarily large array for schedule days
-  
-  const today = new Date();
-  today.setHours(0,0,0,0);
+  let sIdx = 0;
 
   function getDayName(dayIndex) {
     if (dayIndex === 0) return 'Сьогодні';
@@ -289,78 +320,100 @@ function generateSchedule() {
     return `${wDay}, ${dd}.${mm}`;
   }
 
-  for (const subj of sorted) {
-    let sIdx = 0;
-    
-    // Calculate DaysAvailable
-    let dVal = new Date(0);
-    if (subj.deadline) {
-      const [y, m, d] = subj.deadline.split('-');
-      dVal = new Date(y, m - 1, d);
-    }
-    const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
-    let daysAvailable = Math.max(1, daysUntilDeadline + 1);
+  // Helper to schedule a task trying to avoid loaded days
+  function scheduleTask(subj, chunkLimit) {
+    let remaining = subj.time;
+    let days = [];
+    for (let i = 0; i < subj.daysAvailable; i++) days.push(i);
 
-    let timeCanFit120 = 0;
-    let timeCanFit240 = 0;
-    for (let i = 0; i < daysAvailable; i++) {
-      let avail = 240 - dayLoads[i];
-      if (avail > 0) {
-        timeCanFit120 += Math.min(avail, 120);
-        timeCanFit240 += Math.min(avail, 240);
-      }
-    }
+    // Pass 1: Try to fit respecting chunkLimit and MAX_PER_DAY
+    // Sort days by current dayLoads (ascending) to avoid loaded days
+    let sortedDays = [...days].sort((a, b) => dayLoads[a] - dayLoads[b]);
     
-    if (subj.time > timeCanFit240) {
-      // Extreme Burning: Distribute equally across daysAvailable
-      let minReq = Math.ceil(subj.time / daysAvailable);
-      let remaining = subj.time;
-      for (let i = 0; i < daysAvailable; i++) {
-        if (remaining <= 0) break;
-        let chunk = i === daysAvailable - 1 ? remaining : minReq;
+    for (let d of sortedDays) {
+      if (remaining <= 0) break;
+      let avail = MAX_PER_DAY - dayLoads[d];
+      if (avail > 0) {
+        let chunk = Math.min(remaining, avail, chunkLimit);
         schedule.push({
           id: `sess-${subj.id}-${sIdx++}`,
           subjectId: subj.id,
           name: subj.name,
-          day: i,
-          dayName: getDayName(i),
+          day: d,
+          dayName: getDayName(d),
           duration: chunk,
           status: 'Pending',
-          isHeavy: false,
-          isCritical: true
+          isHeavy: chunkLimit > 120, // Cat B is inherently heavy
+          isCritical: false
         });
-        dayLoads[i] += chunk;
+        dayLoads[d] += chunk;
         remaining -= chunk;
       }
-    } else {
-      // Burning or Normal
-      let chunkLimit = subj.time > timeCanFit120 ? 240 : 120;
-      let isHeavy = chunkLimit === 240;
-      
-      let remaining = subj.time;
-      let dayIdx = 0;
-      
-      while (remaining > 0) {
-        let availableInDay = MAX_PER_DAY - dayLoads[dayIdx];
-        if (availableInDay > 0) {
-          let chunk = Math.min(remaining, availableInDay, chunkLimit);
+    }
+
+    // Pass 2: If remaining > 0, MUST squeeze it into daysAvailable
+    if (remaining > 0) {
+      let remainingDays = days.length;
+      for (let d of days) {
+        if (remaining <= 0) break;
+        let chunk = Math.min(remaining, Math.ceil(remaining / remainingDays));
+        
+        let existing = schedule.find(s => s.subjectId === subj.id && s.day === d);
+        if (existing) {
+          existing.duration += chunk;
+          if (dayLoads[d] + chunk > 240) existing.isCritical = true;
+        } else {
           schedule.push({
             id: `sess-${subj.id}-${sIdx++}`,
             subjectId: subj.id,
             name: subj.name,
-            day: dayIdx,
-            dayName: getDayName(dayIdx),
+            day: d,
+            dayName: getDayName(d),
             duration: chunk,
             status: 'Pending',
-            isHeavy: isHeavy,
-            isCritical: false
+            isHeavy: chunkLimit > 120,
+            isCritical: (dayLoads[d] + chunk) > 240
           });
-          dayLoads[dayIdx] += chunk;
-          remaining -= chunk;
         }
-        dayIdx++;
+        dayLoads[d] += chunk;
+        remaining -= chunk;
+        remainingDays--;
       }
     }
+  }
+
+  // 1. Process Category V
+  for (const subj of catV) {
+    let remaining = subj.time;
+    let remainingDays = subj.daysAvailable;
+    for (let d = 0; d < subj.daysAvailable; d++) {
+      if (remaining <= 0) break;
+      let chunk = Math.min(remaining, Math.ceil(remaining / remainingDays));
+      schedule.push({
+        id: `sess-${subj.id}-${sIdx++}`,
+        subjectId: subj.id,
+        name: subj.name,
+        day: d,
+        dayName: getDayName(d),
+        duration: chunk,
+        status: 'Pending',
+        isHeavy: false,
+        isCritical: true // Cat V is always critical
+      });
+      dayLoads[d] += chunk;
+      remaining -= chunk;
+      remainingDays--;
+    }
+  }
+
+  // 2. Process Category B
+  for (const subj of catB) {
+    scheduleTask(subj, 240);
+  }
+
+  // 3. Process Category A
+  for (const subj of catA) {
+    scheduleTask(subj, 120);
   }
 
   saveSchedule();
