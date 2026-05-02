@@ -92,6 +92,9 @@ function saveSchedule() {
 }
 
 async function loadDemoData() {
+  if (!confirm('Ви впевнені, що хочете відновити демо-дані? Поточний список предметів та розклад будуть замінені.')) {
+    return;
+  }
   cancelEdit();
   try {
     const res = await fetch('./data/demo-data.json');
