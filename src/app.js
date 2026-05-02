@@ -448,6 +448,8 @@ function renderSchedule(filter = 'All') {
           <span>${day.name}</span>
           <span class="day-stats">${day.total} хв</span>
         </div>
+        ${day.total > 240 ? '<span class="warning-critical" style="margin-bottom: 0.5rem;">⚠️ Потрібно краще розподіляти свій час!</span>' : ''}
+        ${day.total >= 210 && day.total <= 240 ? '<span class="warning-heavy-load" style="margin-bottom: 0.5rem;">💡 Настанова: не забувайте робити перерви!</span>' : ''}
         <div class="session-list">
           ${day.sessions.map(sess => `
             <div class="session-card status-${sess.status}">
@@ -455,8 +457,6 @@ function renderSchedule(filter = 'All') {
                 <h4>${sess.name}</h4>
                 <span class="session-duration">${sess.duration} хв</span>
               </div>
-              ${sess.isCritical ? '<span class="warning-critical">⚠️ Потрібно краще розподіляти свій час!</span>' : ''}
-              ${sess.isHeavy && !sess.isCritical ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
               <div class="session-controls">
                 <button class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('${sess.id}', 'Pending')">Очікує</button>
                 <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
