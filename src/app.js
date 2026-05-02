@@ -366,10 +366,12 @@ function generateSchedule() {
 
     // Pass 2: If remaining > 0, MUST squeeze it into daysAvailable
     if (remaining > 0) {
-      let remainingDays = days.length;
-      for (let d of days) {
-        if (remaining <= 0) break;
-        let chunk = Math.min(remaining, Math.ceil(remaining / remainingDays));
+      let squeezeChunkLimit = 120; // Try to use 120 min chunks for squeezing to keep sessions manageable
+      while (remaining > 0) {
+        // Sort days by dayLoads ascending to pick the lightest day
+        let sortedDays = [...days].sort((a, b) => dayLoads[a] - dayLoads[b]);
+        let d = sortedDays[0]; 
+        let chunk = Math.min(remaining, squeezeChunkLimit);
         
         let existing = schedule.find(s => s.subjectId === subj.id && s.day === d);
         if (existing) {
@@ -384,39 +386,19 @@ function generateSchedule() {
             dayName: getFriendlyDateFromOffset(d),
             duration: chunk,
             status: 'Pending',
-            isHeavy: chunkLimit > 120,
+            isHeavy: chunkLimit > 120, // Keep original heavy status based on category
             isCritical: (dayLoads[d] + chunk) > 240
           });
         }
         dayLoads[d] += chunk;
         remaining -= chunk;
-        remainingDays--;
       }
     }
   }
 
   // 1. Process Category V
   for (const subj of catV) {
-    let remaining = subj.time;
-    let remainingDays = subj.daysAvailable;
-    for (let d = 0; d < subj.daysAvailable; d++) {
-      if (remaining <= 0) break;
-      let chunk = Math.min(remaining, Math.ceil(remaining / remainingDays));
-      schedule.push({
-        id: `sess-${subj.id}-${sIdx++}`,
-        subjectId: subj.id,
-        name: subj.name,
-        day: d,
-        dayName: getFriendlyDateFromOffset(d),
-        duration: chunk,
-        status: 'Pending',
-        isHeavy: false,
-        isCritical: true // Cat V is always critical
-      });
-      dayLoads[d] += chunk;
-      remaining -= chunk;
-      remainingDays--;
-    }
+    scheduleTask(subj, 240);
   }
 
   // 2. Process Category B
