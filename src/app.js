@@ -26,9 +26,13 @@ function init() {
   renderSubjects();
   setupEventListeners();
   
-  // Set min date for deadline to today
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('input-deadline').min = today;
+  // Set min date for deadline to today in local timezone
+  const todayObj = new Date();
+  const year = todayObj.getFullYear();
+  const month = String(todayObj.getMonth() + 1).padStart(2, '0');
+  const day = String(todayObj.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+  document.getElementById('input-deadline').min = todayStr;
   checkTotalTime();
 }
 
@@ -126,7 +130,11 @@ function validateForm() {
   }
   
   const deadlineInput = document.getElementById('input-deadline');
-  const dVal = new Date(deadlineInput.value);
+  let dVal = new Date(0); // fallback
+  if (deadlineInput.value) {
+    const [y, m, d] = deadlineInput.value.split('-');
+    dVal = new Date(y, m - 1, d);
+  }
   const now = new Date();
   now.setHours(0,0,0,0);
   if (!deadlineInput.value || dVal < now) {
