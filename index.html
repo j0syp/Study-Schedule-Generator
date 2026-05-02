@@ -58,9 +58,22 @@
             </div>
 
             <div class="form-group">
-              <label for="input-deadline">Дедлайн</label>
-              <input type="date" id="input-deadline" required />
-              <div class="error-text" id="error-deadline">Дата не може бути в минулому</div>
+              <label>Дедлайн</label>
+              <div class="form-row" style="gap: 8px; display: grid; grid-template-columns: 1fr 1.5fr 1fr;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">День</label>
+                  <select id="input-dl-day" required></select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">Місяць</label>
+                  <select id="input-dl-month" required></select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">Рік</label>
+                  <select id="input-dl-year" required></select>
+                </div>
+              </div>
+              <div class="error-text" id="error-deadline">Дата не може бути в минулому або недійсною</div>
             </div>
 
             <div class="form-actions">
