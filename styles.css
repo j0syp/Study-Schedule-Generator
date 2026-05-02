@@ -108,11 +108,11 @@ h2 {
 @media (min-width: 768px) {
   .setup-grid {
     grid-template-columns: 350px 1fr;
-    align-items: start;
   }
   .form-panel {
+    align-self: flex-start;
     position: sticky;
-    top: 100px; /* Account for sticky header */
+    top: 100px;
   }
 }
 
