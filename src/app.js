@@ -340,10 +340,8 @@ function generateSchedule() {
     for (let i = 0; i < subj.daysAvailable; i++) days.push(i);
 
     // Pass 1: Try to fit respecting chunkLimit and MAX_PER_DAY
-    // Sort days by current dayLoads (ascending) to avoid loaded days
-    let sortedDays = [...days].sort((a, b) => dayLoads[a] - dayLoads[b]);
-    
-    for (let d of sortedDays) {
+    // Iterate chronologically to pack days to 240 and finish as early as possible
+    for (let d of days) {
       if (remaining <= 0) break;
       let avail = MAX_PER_DAY - dayLoads[d];
       if (avail > 0) {
@@ -356,7 +354,7 @@ function generateSchedule() {
           dayName: getFriendlyDateFromOffset(d),
           duration: chunk,
           status: 'Pending',
-          isHeavy: chunkLimit > 120, // Cat B is inherently heavy
+          isHeavy: chunk > 120,
           isCritical: false
         });
         dayLoads[d] += chunk;
@@ -376,6 +374,7 @@ function generateSchedule() {
         let existing = schedule.find(s => s.subjectId === subj.id && s.day === d);
         if (existing) {
           existing.duration += chunk;
+          if (existing.duration > 120) existing.isHeavy = true;
           if (dayLoads[d] + chunk > 240) existing.isCritical = true;
         } else {
           schedule.push({
@@ -386,7 +385,7 @@ function generateSchedule() {
             dayName: getFriendlyDateFromOffset(d),
             duration: chunk,
             status: 'Pending',
-            isHeavy: chunkLimit > 120, // Keep original heavy status based on category
+            isHeavy: chunk > 120,
             isCritical: (dayLoads[d] + chunk) > 240
           });
         }
@@ -408,7 +407,7 @@ function generateSchedule() {
 
   // 3. Process Category A
   for (const subj of catA) {
-    scheduleTask(subj, 120);
+    scheduleTask(subj, 240);
   }
 
   saveSchedule();
