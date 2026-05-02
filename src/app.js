@@ -15,6 +15,7 @@ const scheduleGridEl = document.getElementById('schedule-grid');
 const statTotalTime = document.getElementById('stat-total-time');
 const btnGenerate = document.getElementById('btn-generate');
 const btnBack = document.getElementById('btn-back');
+const btnClearSchedule = document.getElementById('btn-clear-schedule');
 const toastEl = document.getElementById('toast');
 const btnResetDemo = document.getElementById('btn-reset-demo');
 const filterBtns = document.querySelectorAll('.filter-btn');
@@ -150,7 +151,8 @@ function getFriendlyDateFromStr(dateStr) {
   today.setHours(0, 0, 0, 0);
   const [y, m, d] = dateStr.split('-');
   const dVal = new Date(y, m - 1, d);
-  const dayIndex = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
+  const diffTime = dVal - today;
+  const dayIndex = Math.round(diffTime / (1000 * 60 * 60 * 24));
   return getFriendlyDateFromOffset(dayIndex);
 }
 
@@ -221,6 +223,8 @@ function setupEventListeners() {
     switchView('setup');
     renderSubjects();
   });
+
+  btnClearSchedule.addEventListener('click', clearSchedule);
 
   filterBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -568,10 +572,22 @@ function updateStatus(sessionId, newStatus) {
   }
 }
 
+function clearSchedule() {
+  if (confirm('Ви впевнені, що хочете очистити поточний розклад? Це розблокує редагування предметів, але ви втратите відмічені статуси.')) {
+    schedule = [];
+    saveSchedule();
+    showToast('Розклад очищено');
+    switchView('setup');
+    renderSubjects();
+    checkTotalTime();
+  }
+}
+
 // Global scope bindings
 window.editSubject = editSubject;
 window.deleteSubject = deleteSubject;
 window.updateStatus = updateStatus;
+window.clearSchedule = clearSchedule;
 
 // Start app
 init();

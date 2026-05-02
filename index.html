@@ -42,7 +42,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="input-time">Час (хвилини)</label>
-                <input type="number" id="input-time" placeholder="120" min="30" max="600" step="15" required />
+                <input type="number" id="input-time" placeholder="120" min="30" max="600" step="30" required />
                 <div class="error-text" id="error-time">Від 30 до 600 хв</div>
               </div>
 
@@ -116,6 +116,7 @@
             Назад
           </button>
           <h2>Ваш розклад на тиждень</h2>
+          <button id="btn-clear-schedule" class="btn btn-outline btn-sm" style="margin-left: auto; color: var(--text-error); border-color: rgba(239, 68, 68, 0.2);">Очистити розклад</button>
         </div>
         
         <div class="filter-group">
