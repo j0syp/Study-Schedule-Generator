@@ -75,6 +75,11 @@ function init() {
   renderSubjects(); // This will call setFormLocked
   checkTotalTime();
   validateForm(false); // Initial silent validation
+
+  if (schedule.length > 0) {
+    switchView('schedule');
+    renderSchedule('All');
+  }
 }
 
 // Data Management
@@ -242,7 +247,18 @@ function validateForm(showErrors = true) {
 function checkTotalTime() {
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
   statTotalTime.textContent = total;
-  btnGenerate.disabled = subjects.length === 0 || schedule.length > 0;
+  
+  if (schedule.length > 0) {
+    btnGenerate.disabled = false;
+    btnGenerate.textContent = '📅 Переглянути розклад';
+    btnGenerate.classList.add('btn-secondary');
+    btnGenerate.classList.remove('btn-accent');
+  } else {
+    btnGenerate.disabled = subjects.length === 0;
+    btnGenerate.textContent = '✨ Згенерувати розклад';
+    btnGenerate.classList.add('btn-accent');
+    btnGenerate.classList.remove('btn-secondary');
+  }
 }
 
 // Event Listeners
@@ -261,7 +277,14 @@ function setupEventListeners() {
 
   btnDeleteAllSubjects.addEventListener('click', deleteAllSubjects);
 
-  btnGenerate.addEventListener('click', generateSchedule);
+  btnGenerate.addEventListener('click', () => {
+    if (schedule.length > 0) {
+      switchView('schedule');
+      renderSchedule('All');
+    } else {
+      generateSchedule();
+    }
+  });
 
   btnBack.addEventListener('click', () => {
     switchView('setup');
