@@ -94,11 +94,24 @@ function showToast(message) {
 }
 
 // Form & Validation
+function getWeeks() {
+  const w = parseInt(document.getElementById('input-weeks').value, 10);
+  return isNaN(w) ? 1 : w;
+}
+
+function getMaxTime() {
+  return getWeeks() * 1680;
+}
+
 function checkTotalTime() {
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
-  statTotalTime.textContent = total;
+  const maxTime = getMaxTime();
   
-  if (total > 1680) {
+  document.getElementById('stat-total-time').textContent = total;
+  document.getElementById('stat-max-time').textContent = maxTime;
+  document.getElementById('stat-max-error').textContent = maxTime;
+  
+  if (total > maxTime) {
     statTotalTime.style.color = 'var(--text-error)';
     btnGenerate.disabled = true;
     generationError.classList.remove('hidden');
@@ -154,6 +167,7 @@ function setupEventListeners() {
   document.getElementById('input-name').addEventListener('input', validateForm);
   document.getElementById('input-time').addEventListener('input', validateForm);
   document.getElementById('input-deadline').addEventListener('input', validateForm);
+  document.getElementById('input-weeks').addEventListener('input', checkTotalTime);
   
   formSubject.addEventListener('submit', handleFormSubmit);
   
@@ -184,7 +198,7 @@ function handleFormSubmit(e) {
     name: document.getElementById('input-name').value.trim(),
     time: parseInt(document.getElementById('input-time').value, 10),
     deadline: document.getElementById('input-deadline').value,
-    difficulty: document.getElementById('input-difficulty').value
+    priority: document.getElementById('input-priority').value
   };
 
   if (editId) {
@@ -220,7 +234,7 @@ function editSubject(id) {
   document.getElementById('input-name').value = subj.name;
   document.getElementById('input-time').value = subj.time;
   document.getElementById('input-deadline').value = subj.deadline;
-  document.getElementById('input-difficulty').value = subj.difficulty;
+  document.getElementById('input-priority').value = subj.priority;
   
   document.getElementById('form-title').textContent = 'Редагувати предмет';
   document.getElementById('btn-submit').textContent = 'Зберегти зміни';
@@ -253,7 +267,7 @@ function renderSubjects() {
         <div class="subject-meta">
           <span>⏳ ${s.time} хв</span>
           <span>📅 ${s.deadline}</span>
-          <span class="badge ${s.difficulty}">${s.difficulty}</span>
+          <span class="badge ${s.priority}">${s.priority}</span>
         </div>
       </div>
       <div class="subject-actions">
@@ -266,68 +280,108 @@ function renderSubjects() {
 
 // Generation Logic
 function generateSchedule() {
+  const weeks = getWeeks();
+  const maxTime = getMaxTime();
+  const distributeEvenly = document.getElementById('input-distribute').checked;
+
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
-  if (total > 1680) {
-    alert("Перевищено ліміт часу на тиждень (макс 1680 хв). Зменште навантаження.");
+  if (total > maxTime) {
+    alert(`Перевищено ліміт часу (макс ${maxTime} хв). Зменште навантаження.`);
     return;
   }
 
-  // Sort subjects by Deadline, then by Difficulty (Складно > Середньо > Легко)
-  const difficultyWeight = { 'Складно': 3, 'Середньо': 2, 'Легко': 1 };
+  // Sort subjects by Deadline, then by Priority (Високий > Середній > Низький)
+  const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
   
   const sorted = [...subjects].sort((a, b) => {
     const dateA = new Date(a.deadline).getTime();
     const dateB = new Date(b.deadline).getTime();
     if (dateA !== dateB) return dateA - dateB;
-    return difficultyWeight[b.difficulty] - difficultyWeight[a.difficulty];
+    return priorityWeight[b.priority] - priorityWeight[a.priority];
   });
 
   schedule = [];
   const MAX_PER_DAY = 240;
   const MAX_PER_SESSION = 120;
+  const TOTAL_DAYS = weeks * 7;
   
-  // Array of 7 days (0: Monday ... 6: Sunday)
-  const dayLoads = [0, 0, 0, 0, 0, 0, 0];
-  const dayNames = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя'];
+  const dayLoads = new Array(TOTAL_DAYS).fill(0);
+  const baseDayNames = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя'];
   
-  let dayIndex = 0;
+  function getDayName(dayIndex) {
+    const w = Math.floor(dayIndex / 7) + 1;
+    const d = baseDayNames[dayIndex % 7];
+    return weeks > 1 ? `Тиждень ${w}, ${d}` : d;
+  }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  let defaultDayIndex = 0;
 
   for (const subj of sorted) {
-    let timeRemaining = subj.time;
     let sIdx = 0;
+    
+    // Calculate DaysAvailable
+    let dVal = new Date(0);
+    if (subj.deadline) {
+      const [y, m, d] = subj.deadline.split('-');
+      dVal = new Date(y, m - 1, d);
+    }
+    const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
+    let daysAvailable = Math.min(daysUntilDeadline + 1, TOTAL_DAYS);
+    if (daysAvailable <= 0) daysAvailable = 1;
 
-    while (timeRemaining > 0) {
-      if (dayIndex > 6) {
-        // Technically shouldn't happen due to total time check, but safeguard
-        break; 
+    if (distributeEvenly) {
+      let timePerDay = Math.ceil(subj.time / daysAvailable);
+      let remaining = subj.time;
+      for (let i = 0; i < daysAvailable; i++) {
+        if (remaining <= 0) break;
+        let chunk = i === daysAvailable - 1 ? remaining : timePerDay;
+        
+        schedule.push({
+          id: `sess-${subj.id}-${sIdx++}`,
+          subjectId: subj.id,
+          name: subj.name,
+          day: i,
+          dayName: getDayName(i),
+          duration: chunk,
+          status: 'Pending',
+          isHeavy: chunk > MAX_PER_SESSION
+        });
+        
+        dayLoads[i] += chunk;
+        remaining -= chunk;
       }
+    } else {
+      let timeRemaining = subj.time;
+      while (timeRemaining > 0) {
+        if (defaultDayIndex >= TOTAL_DAYS) break;
+        
+        const availableInDay = MAX_PER_DAY - dayLoads[defaultDayIndex];
+        if (availableInDay <= 0) {
+          defaultDayIndex++;
+          continue;
+        }
 
-      const availableInDay = MAX_PER_DAY - dayLoads[dayIndex];
-      
-      if (availableInDay <= 0) {
-        dayIndex++;
-        continue;
-      }
+        const chunk = Math.min(timeRemaining, availableInDay, MAX_PER_SESSION);
+        
+        schedule.push({
+          id: `sess-${subj.id}-${sIdx++}`,
+          subjectId: subj.id,
+          name: subj.name,
+          day: defaultDayIndex,
+          dayName: getDayName(defaultDayIndex),
+          duration: chunk,
+          status: 'Pending',
+          isHeavy: false
+        });
 
-      // Max we can schedule in this chunk is min(timeRemaining, availableInDay, MAX_PER_SESSION)
-      const chunk = Math.min(timeRemaining, availableInDay, MAX_PER_SESSION);
-      
-      schedule.push({
-        id: `sess-${subj.id}-${sIdx++}`,
-        subjectId: subj.id,
-        name: subj.name,
-        day: dayIndex,
-        dayName: dayNames[dayIndex],
-        duration: chunk,
-        status: 'Pending'
-      });
-
-      dayLoads[dayIndex] += chunk;
-      timeRemaining -= chunk;
-      
-      // If day is full, move to next day
-      if (dayLoads[dayIndex] >= MAX_PER_DAY) {
-        dayIndex++;
+        dayLoads[defaultDayIndex] += chunk;
+        timeRemaining -= chunk;
+        
+        if (dayLoads[defaultDayIndex] >= MAX_PER_DAY) {
+          defaultDayIndex++;
+        }
       }
     }
   }
@@ -377,6 +431,7 @@ function renderSchedule(filter = 'All') {
                 <h4>${sess.name}</h4>
                 <span class="session-duration">${sess.duration} хв</span>
               </div>
+              ${sess.isHeavy ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
               <div class="session-controls">
                 <button class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('${sess.id}', 'Pending')">Очікує</button>
                 <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
