@@ -111,8 +111,6 @@ h2 {
   }
   .form-panel {
     align-self: flex-start;
-    position: sticky;
-    top: 100px;
   }
 }
 
