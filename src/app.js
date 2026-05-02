@@ -57,14 +57,20 @@ function init() {
 
   const monthNames = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
 
-  for (let i = 1; i <= 31; i++) inputDlDay.add(new Option(i, i));
-  inputDlDay.value = day;
+  for (let i = 1; i <= 31; i++) {
+    const isDef = (i === day);
+    inputDlDay.add(new Option(i, i, isDef, isDef));
+  }
 
-  for (let i = 1; i <= 12; i++) inputDlMonth.add(new Option(monthNames[i - 1], i));
-  inputDlMonth.value = month;
+  for (let i = 1; i <= 12; i++) {
+    const isDef = (i === month);
+    inputDlMonth.add(new Option(monthNames[i - 1], i, isDef, isDef));
+  }
 
-  for (let i = year; i <= year + 5; i++) inputDlYear.add(new Option(i, i));
-  inputDlYear.value = year;
+  for (let i = year; i <= year + 5; i++) {
+    const isDef = (i === year);
+    inputDlYear.add(new Option(i, i, isDef, isDef));
+  }
 
   checkTotalTime();
 }
