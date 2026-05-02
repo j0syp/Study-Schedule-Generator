@@ -483,6 +483,17 @@ input:focus, select:focus {
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+.warning-critical {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-error);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
 .session-header {
   display: flex;
   justify-content: space-between;

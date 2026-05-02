@@ -15,7 +15,6 @@ const scheduleGridEl = document.getElementById('schedule-grid');
 const statTotalTime = document.getElementById('stat-total-time');
 const btnGenerate = document.getElementById('btn-generate');
 const btnBack = document.getElementById('btn-back');
-const generationError = document.getElementById('generation-error');
 const toastEl = document.getElementById('toast');
 const btnResetDemo = document.getElementById('btn-reset-demo');
 const filterBtns = document.querySelectorAll('.filter-btn');
@@ -94,31 +93,10 @@ function showToast(message) {
 }
 
 // Form & Validation
-function getWeeks() {
-  const w = parseInt(document.getElementById('input-weeks').value, 10);
-  return isNaN(w) ? 1 : w;
-}
-
-function getMaxTime() {
-  return getWeeks() * 1680;
-}
-
 function checkTotalTime() {
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
-  const maxTime = getMaxTime();
-  
   document.getElementById('stat-total-time').textContent = total;
-  document.getElementById('stat-max-error').textContent = maxTime;
-  
-  if (total > maxTime) {
-    statTotalTime.style.color = 'var(--text-error)';
-    btnGenerate.disabled = true;
-    generationError.classList.remove('hidden');
-  } else {
-    statTotalTime.style.color = 'inherit';
-    btnGenerate.disabled = subjects.length === 0;
-    generationError.classList.add('hidden');
-  }
+  btnGenerate.disabled = subjects.length === 0;
 }
 
 function validateForm() {
@@ -166,7 +144,6 @@ function setupEventListeners() {
   document.getElementById('input-name').addEventListener('input', validateForm);
   document.getElementById('input-time').addEventListener('input', validateForm);
   document.getElementById('input-deadline').addEventListener('input', validateForm);
-  document.getElementById('input-weeks').addEventListener('change', checkTotalTime);
   
   formSubject.addEventListener('submit', handleFormSubmit);
   
@@ -197,8 +174,7 @@ function handleFormSubmit(e) {
     name: document.getElementById('input-name').value.trim(),
     time: parseInt(document.getElementById('input-time').value, 10),
     deadline: document.getElementById('input-deadline').value,
-    priority: document.getElementById('input-priority').value,
-    distribute: document.getElementById('input-distribute').checked
+    priority: document.getElementById('input-priority').value
   };
 
   if (editId) {
@@ -235,7 +211,6 @@ function editSubject(id) {
   document.getElementById('input-time').value = subj.time;
   document.getElementById('input-deadline').value = subj.deadline;
   document.getElementById('input-priority').value = subj.priority;
-  document.getElementById('input-distribute').checked = !!subj.distribute;
   
   document.getElementById('form-title').textContent = 'Редагувати предмет';
   document.getElementById('btn-submit').textContent = 'Зберегти зміни';
@@ -264,7 +239,7 @@ function renderSubjects() {
   subjectListEl.innerHTML = subjects.map(s => `
     <div class="subject-item">
       <div class="subject-info">
-        <h3>${s.name} ${s.distribute ? '<span style="font-size:0.75rem; color:var(--primary);">(Рівномірно)</span>' : ''}</h3>
+        <h3>${s.name}</h3>
         <div class="subject-meta">
           <span>⏳ ${s.time} хв</span>
           <span>📅 ${s.deadline}</span>
@@ -281,15 +256,6 @@ function renderSubjects() {
 
 // Generation Logic
 function generateSchedule() {
-  const weeks = getWeeks();
-  const maxTime = getMaxTime();
-
-  const total = subjects.reduce((sum, s) => sum + s.time, 0);
-  if (total > maxTime) {
-    alert(`Перевищено ліміт часу (макс ${maxTime} хв). Зменште навантаження.`);
-    return;
-  }
-
   // Sort subjects by Deadline, then by Priority (Високий > Середній > Низький)
   const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
   
@@ -302,16 +268,13 @@ function generateSchedule() {
 
   schedule = [];
   const MAX_PER_DAY = 240;
-  const MAX_PER_SESSION = 120;
-  const TOTAL_DAYS = weeks * 7;
-  
-  const dayLoads = new Array(TOTAL_DAYS).fill(0);
+  const dayLoads = new Array(365).fill(0); // Arbitrarily large array for schedule days
   const baseDayNames = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя'];
   
   function getDayName(dayIndex) {
     const w = Math.floor(dayIndex / 7) + 1;
     const d = baseDayNames[dayIndex % 7];
-    return weeks > 1 ? `Тиждень ${w}, ${d}` : d;
+    return `Тиждень ${w}, ${d}`;
   }
 
   const today = new Date();
@@ -327,75 +290,57 @@ function generateSchedule() {
       dVal = new Date(y, m - 1, d);
     }
     const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
-    let daysAvailable = Math.min(daysUntilDeadline + 1, TOTAL_DAYS);
-    if (daysAvailable <= 0) daysAvailable = 1;
+    let daysAvailable = Math.max(1, daysUntilDeadline + 1);
 
-    let availableDays = [];
-    for (let i = 0; i < daysAvailable; i++) availableDays.push(i);
+    let minReq = Math.ceil(subj.time / daysAvailable);
     
-    let sessionDurations = new Map();
-    availableDays.forEach(d => sessionDurations.set(d, 0));
-
-    if (subj.distribute) {
+    if (minReq > 240) {
+      // Extreme Burning: Distribute equally across daysAvailable
       let remaining = subj.time;
-      while (remaining > 0) {
-        let minDay = availableDays[0];
-        let minLoad = dayLoads[minDay] + sessionDurations.get(minDay);
-        for (let d of availableDays) {
-          let currentLoad = dayLoads[d] + sessionDurations.get(d);
-          if (currentLoad < minLoad) {
-            minDay = d;
-            minLoad = currentLoad;
-          }
-        }
-        let chunk = Math.min(remaining, 5);
-        sessionDurations.set(minDay, sessionDurations.get(minDay) + chunk);
-        remaining -= chunk;
-      }
-    } else {
-      let remaining = subj.time;
-      let sortedDays = [...availableDays].sort((a, b) => dayLoads[a] - dayLoads[b]);
-      
-      for (let d of sortedDays) {
+      for (let i = 0; i < daysAvailable; i++) {
         if (remaining <= 0) break;
-        let availableInDay = MAX_PER_DAY - dayLoads[d];
-        if (availableInDay > 0) {
-          let chunk = Math.min(remaining, availableInDay, MAX_PER_SESSION);
-          sessionDurations.set(d, chunk);
-          remaining -= chunk;
-        }
-      }
-      
-      while (remaining > 0) {
-        let minDay = availableDays[0];
-        let minLoad = dayLoads[minDay] + sessionDurations.get(minDay);
-        for (let d of availableDays) {
-          let currentLoad = dayLoads[d] + sessionDurations.get(d);
-          if (currentLoad < minLoad) {
-            minDay = d;
-            minLoad = currentLoad;
-          }
-        }
-        let chunk = Math.min(remaining, 30);
-        sessionDurations.set(minDay, sessionDurations.get(minDay) + chunk);
-        remaining -= chunk;
-      }
-    }
-
-    for (let d of availableDays) {
-      let dur = sessionDurations.get(d);
-      if (dur > 0) {
+        let chunk = i === daysAvailable - 1 ? remaining : minReq;
         schedule.push({
           id: `sess-${subj.id}-${sIdx++}`,
           subjectId: subj.id,
           name: subj.name,
-          day: d,
-          dayName: getDayName(d),
-          duration: dur,
+          day: i,
+          dayName: getDayName(i),
+          duration: chunk,
           status: 'Pending',
-          isHeavy: dur > MAX_PER_SESSION
+          isHeavy: false,
+          isCritical: true
         });
-        dayLoads[d] += dur;
+        dayLoads[i] += chunk;
+        remaining -= chunk;
+      }
+    } else {
+      // Burning or Normal
+      let chunkLimit = minReq > 120 ? 240 : 120;
+      let isHeavy = minReq > 120;
+      
+      let remaining = subj.time;
+      let dayIdx = 0;
+      
+      while (remaining > 0) {
+        let availableInDay = MAX_PER_DAY - dayLoads[dayIdx];
+        if (availableInDay > 0) {
+          let chunk = Math.min(remaining, availableInDay, chunkLimit);
+          schedule.push({
+            id: `sess-${subj.id}-${sIdx++}`,
+            subjectId: subj.id,
+            name: subj.name,
+            day: dayIdx,
+            dayName: getDayName(dayIdx),
+            duration: chunk,
+            status: 'Pending',
+            isHeavy: isHeavy,
+            isCritical: false
+          });
+          dayLoads[dayIdx] += chunk;
+          remaining -= chunk;
+        }
+        dayIdx++;
       }
     }
   }
@@ -445,7 +390,8 @@ function renderSchedule(filter = 'All') {
                 <h4>${sess.name}</h4>
                 <span class="session-duration">${sess.duration} хв</span>
               </div>
-              ${sess.isHeavy ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
+              ${sess.isCritical ? '<span class="warning-critical">⚠️ Потрібно краще розподіляти свій час!</span>' : ''}
+              ${sess.isHeavy && !sess.isCritical ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
               <div class="session-controls">
                 <button class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('${sess.id}', 'Pending')">Очікує</button>
                 <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
