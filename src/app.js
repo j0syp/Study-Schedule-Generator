@@ -141,7 +141,7 @@ function validateForm() {
   
   const timeInput = document.getElementById('input-time');
   const timeVal = parseInt(timeInput.value, 10);
-  if (isNaN(timeVal) || timeVal < 15 || timeVal > 1440) {
+  if (isNaN(timeVal) || timeVal < 30 || timeVal > 1440) {
     timeInput.parentElement.classList.add('invalid');
     isValid = false;
   } else {
