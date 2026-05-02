@@ -355,6 +355,11 @@ function deleteAllSubjects() {
 function deleteSubject(id) {
   if (confirm('Видалити цей предмет?')) {
     subjects = subjects.filter(s => s.id !== id);
+
+    if (id === editId) {
+      cancelEdit();
+    }
+
     saveData();
     renderSubjects();
     checkTotalTime();
