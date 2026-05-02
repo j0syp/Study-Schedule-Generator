@@ -269,16 +269,25 @@ function generateSchedule() {
   schedule = [];
   const MAX_PER_DAY = 240;
   const dayLoads = new Array(365).fill(0); // Arbitrarily large array for schedule days
-  const baseDayNames = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя'];
   
-  function getDayName(dayIndex) {
-    const w = Math.floor(dayIndex / 7) + 1;
-    const d = baseDayNames[dayIndex % 7];
-    return `Тиждень ${w}, ${d}`;
-  }
-
   const today = new Date();
   today.setHours(0,0,0,0);
+
+  function getDayName(dayIndex) {
+    if (dayIndex === 0) return 'Сьогодні';
+    if (dayIndex === 1) return 'Завтра';
+    if (dayIndex === 2) return 'Післязавтра';
+    
+    const d = new Date(today);
+    d.setDate(d.getDate() + dayIndex);
+    
+    const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
+    const wDay = dayNames[d.getDay()];
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    
+    return `${wDay}, ${dd}.${mm}`;
+  }
 
   for (const subj of sorted) {
     let sIdx = 0;
@@ -292,10 +301,19 @@ function generateSchedule() {
     const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
     let daysAvailable = Math.max(1, daysUntilDeadline + 1);
 
-    let minReq = Math.ceil(subj.time / daysAvailable);
+    let timeCanFit120 = 0;
+    let timeCanFit240 = 0;
+    for (let i = 0; i < daysAvailable; i++) {
+      let avail = 240 - dayLoads[i];
+      if (avail > 0) {
+        timeCanFit120 += Math.min(avail, 120);
+        timeCanFit240 += Math.min(avail, 240);
+      }
+    }
     
-    if (minReq > 240) {
+    if (subj.time > timeCanFit240) {
       // Extreme Burning: Distribute equally across daysAvailable
+      let minReq = Math.ceil(subj.time / daysAvailable);
       let remaining = subj.time;
       for (let i = 0; i < daysAvailable; i++) {
         if (remaining <= 0) break;
@@ -316,8 +334,8 @@ function generateSchedule() {
       }
     } else {
       // Burning or Normal
-      let chunkLimit = minReq > 120 ? 240 : 120;
-      let isHeavy = minReq > 120;
+      let chunkLimit = subj.time > timeCanFit120 ? 240 : 120;
+      let isHeavy = chunkLimit === 240;
       
       let remaining = subj.time;
       let dayIdx = 0;
