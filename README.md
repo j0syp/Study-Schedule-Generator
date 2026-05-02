@@ -1,35 +1,42 @@
-# KPI 2026 GitHub Pages App Template
+# Генератор навчального розкладу (Study Schedule Generator)
 
-Starter repository for small coursework web applications that are implemented from existing markdown requirements and deployed to GitHub Pages.
+Цей проєкт є інтерактивним інструментом для студентів або людей, які займаються самоосвітою, для генерації навчального розкладу на тиждень.
 
-## Intended use
+## 🚀 Feasibility Summary
 
-Use this repository as a template for:
-- the teacher's demo application;
-- student repositories created after requirements are already written;
-- small GitHub Pages projects that must stay within static hosting constraints.
+- **GitHub Pages Feasibility**: 100%. Проєкт повністю реалізовано на клієнті без потреби у бекенді чи базах даних.
+- **Стек технологій**: Plain HTML, CSS, Vanilla JavaScript. Стек обрано для забезпечення максимальної простоти, уникнення зайвих залежностей та ідеальної сумісності зі статичним хостингом GitHub Pages.
+- **Зберігання даних**: `localStorage`. Дані повністю ізольовані в браузері користувача.
 
-## Suggested workflow
+## ✨ Можливості (Features)
 
-1. Create a new repository from this template.
-2. Add the project requirements as markdown under `requirements/`.
-3. Invoke the `requirements-to-github-pages` skill inside the new repository.
-4. Let the skill:
-   - assess feasibility;
-   - choose the simplest viable stack;
-   - document SDRs;
-   - implement the app;
-   - add demo data and reset flow;
-   - update deployment files.
+- **Додавання предметів (CRUD)**: Додавайте предмети, визначайте необхідний час, дедлайн та рівень складності (Легко, Середньо, Складно).
+- **Розумна генерація**: Алгоритм автоматично сортує предмети (спочатку ближчі дедлайни, потім складніші предмети).
+- **Бізнес-правила**:
+  - Ліміт 240 хвилин (4 години) на один день.
+  - Жодна безперервна сесія не перевищує 120 хвилин (алгоритм дробить довгі завдання).
+  - Глобальний ліміт часу на тиждень — 1680 хвилин.
+- **Керування статусом**: Відмічайте згенеровані сесії як Виконані (Completed) або Пропущені (Missed).
+- **Фільтрація**: Переглядайте лише невиконані або вже завершені задачі.
+- **Демо-дані**: У застосунку наявна кнопка "Відновити демо-дані", яка завантажить базові налаштування для демонстрації алгоритму.
 
-## Initial repository structure
+## 🛠 Запуск локально
 
-- `requirements/` - place the markdown requirements here
-- `docs/sdr/` - software decision records
-- `data/` - seed and demo data if needed
-- `.github/workflows/` - GitHub Pages deployment workflow
+1. Клонуйте репозиторій.
+2. Просто відкрийте файл `index.html` у вашому браузері. Ніяких серверів або збірок не потрібно (оскільки використовується Vanilla JS).
+   *Або* використовуйте `Live Server` у VSCode, якщо бажаєте бачити автоматичне оновлення.
 
-## Notes
+## 🌐 Деплой на GitHub Pages
 
-This repository is intentionally minimal. It is not a finished application.
-It is a clean starting point for projects that will be generated from existing requirements.
+Застосунок містить налаштований GitHub Actions Workflow (`.github/workflows/deploy.yml`).
+Для того, щоб опублікувати його:
+1. Перейдіть у налаштування репозиторію **Settings > Pages**.
+2. В розділі **Source** оберіть **GitHub Actions**.
+3. Push/Merge у гілку `main` автоматично розгорне сайт.
+
+## 📂 Структура архітектурних рішень (SDR)
+
+Всі технічні рішення задокументовані в директорії `docs/sdr/`:
+- `0001-stack-choice.md`: Вибір Plain HTML/CSS/JS.
+- `0002-client-storage-choice.md`: Вибір `localStorage`.
+- `0003-routing-state-and-data-model.md`: SPA та модель даних.

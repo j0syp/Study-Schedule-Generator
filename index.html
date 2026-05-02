@@ -1,19 +1,131 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KPI 2026 GitHub Pages Template</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <main class="container">
-      <h1>KPI 2026 GitHub Pages Template</h1>
-      <p>This repository is a starter template for small coursework web applications.</p>
-      <p>Add markdown requirements under <code>requirements/</code>, then run the skill to turn this into a real app.</p>
-      <button id="reset-demo" type="button">Reset demo message</button>
-      <p id="status" class="status"></p>
-    </main>
-    <script type="module" src="./src/app.js"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Генератор навчального розкладу</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <span>Study Planner</span>
+      </div>
+      <button id="btn-reset-demo" class="btn btn-outline btn-sm">Відновити демо-дані</button>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- View 1: Setup (Form and List) -->
+    <section id="view-setup" class="view active">
+      <div class="setup-grid">
+        
+        <!-- Form Panel -->
+        <div class="panel form-panel glass">
+          <h2><span id="form-title">Додати предмет</span></h2>
+          <form id="form-subject" novalidate>
+            <input type="hidden" id="input-id" />
+            
+            <div class="form-group">
+              <label for="input-name">Назва предмета/теми</label>
+              <input type="text" id="input-name" placeholder="Наприклад: Вища математика" minlength="3" required />
+              <div class="error-text" id="error-name">Мінімум 3 символи</div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-time">Час (хвилини)</label>
+                <input type="number" id="input-time" placeholder="120" min="15" max="1200" step="5" required />
+                <div class="error-text" id="error-time">Від 15 до 1200 хв</div>
+              </div>
+
+              <div class="form-group">
+                <label for="input-difficulty">Складність</label>
+                <select id="input-difficulty" required>
+                  <option value="Легко">Легко</option>
+                  <option value="Середньо" selected>Середньо</option>
+                  <option value="Складно">Складно</option>
+                </select>
+                <div class="error-text" id="error-difficulty">Оберіть складність</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="input-deadline">Дедлайн</label>
+              <input type="date" id="input-deadline" required />
+              <div class="error-text" id="error-deadline">Дата не може бути в минулому</div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="btn-submit" class="btn btn-primary btn-full" disabled>Додати предмет</button>
+              <button type="button" id="btn-cancel-edit" class="btn btn-secondary btn-full hidden">Скасувати редагування</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- List Panel -->
+        <div class="panel list-panel glass">
+          <div class="panel-header">
+            <h2>Список завдань</h2>
+            <div class="stats">
+              Загалом: <span id="stat-total-time">0</span> хв / 1680 хв
+            </div>
+          </div>
+          
+          <div class="subject-list" id="subject-list">
+            <!-- Subject Items will be injected here -->
+            <div class="empty-state">
+              <p>Список порожній. Додайте свій перший предмет.</p>
+            </div>
+          </div>
+
+          <div class="panel-footer">
+            <div id="generation-error" class="error-box hidden">
+              Перевищено ліміт часу на тиждень (макс 1680 хв). Зменште навантаження.
+            </div>
+            <button id="btn-generate" class="btn btn-accent btn-full btn-large">✨ Згенерувати розклад</button>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+
+    <!-- View 2: Schedule -->
+    <section id="view-schedule" class="view hidden">
+      <div class="schedule-header glass">
+        <div class="schedule-title-row">
+          <button id="btn-back" class="btn btn-outline btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Назад
+          </button>
+          <h2>Ваш розклад на тиждень</h2>
+        </div>
+        
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="All">Всі</button>
+          <button class="filter-btn" data-filter="Pending">Невиконані</button>
+          <button class="filter-btn" data-filter="Completed">Виконані</button>
+          <button class="filter-btn" data-filter="Missed">Пропущені</button>
+        </div>
+      </div>
+
+      <div class="schedule-grid" id="schedule-grid">
+        <!-- Day columns will be injected here -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
 </html>
