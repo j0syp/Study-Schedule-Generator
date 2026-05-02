@@ -346,6 +346,21 @@ function generateSchedule() {
       let avail = MAX_PER_DAY - dayLoads[d];
       if (avail > 0) {
         let chunk = Math.min(remaining, avail, chunkLimit);
+        
+        // Не створювати сесії менше 30 хвилин
+        if (chunk < 30) continue;
+        
+        // Уникати залишків менше 30 хвилин
+        if (remaining - chunk > 0 && remaining - chunk < 30) {
+          chunk = remaining - 30;
+          if (chunk < 30) continue; 
+        }
+
+        // Не розбивати малі завдання (<120 хв) на шматки, щоб заповнити дрібні "вікна"
+        if (remaining <= 120 && chunk < remaining) {
+          continue; 
+        }
+
         schedule.push({
           id: `sess-${subj.id}-${sIdx++}`,
           subjectId: subj.id,
@@ -370,6 +385,11 @@ function generateSchedule() {
         let sortedDays = [...days].sort((a, b) => dayLoads[a] - dayLoads[b]);
         let d = sortedDays[0]; 
         let chunk = Math.min(remaining, squeezeChunkLimit);
+
+        // Уникати залишків менше 30 хвилин при "втисканні"
+        if (remaining - chunk > 0 && remaining - chunk < 30) {
+          chunk = remaining - 30;
+        }
         
         let existing = schedule.find(s => s.subjectId === subj.id && s.day === d);
         if (existing) {
