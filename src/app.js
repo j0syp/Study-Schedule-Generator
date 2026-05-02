@@ -311,7 +311,7 @@ function generateSchedule() {
   function getDayName(dayIndex) {
     const w = Math.floor(dayIndex / 7) + 1;
     const d = baseDayNames[dayIndex % 7];
-    return weeks > 1 ? \`Тиждень \${w}, \${d}\` : d;
+    return weeks > 1 ? `Тиждень ${w}, ${d}` : d;
   }
 
   const today = new Date();
@@ -338,7 +338,7 @@ function generateSchedule() {
         let chunk = i === daysAvailable - 1 ? remaining : timePerDay;
         
         schedule.push({
-          id: \`sess-\${subj.id}-\${sIdx++}\`,
+          id: `sess-${subj.id}-${sIdx++}`,
           subjectId: subj.id,
           name: subj.name,
           day: i,
@@ -362,7 +362,7 @@ function generateSchedule() {
           const chunk = Math.min(timeRemaining, availableInDay, MAX_PER_SESSION);
           
           schedule.push({
-            id: \`sess-\${subj.id}-\${sIdx++}\`,
+            id: `sess-${subj.id}-${sIdx++}`,
             subjectId: subj.id,
             name: subj.name,
             day: dayIdx,
@@ -392,7 +392,7 @@ function generateSchedule() {
             if (existingSess.duration > MAX_PER_SESSION) existingSess.isHeavy = true;
           } else {
             schedule.push({
-              id: \`sess-\${subj.id}-\${sIdx++}\`,
+              id: `sess-${subj.id}-${sIdx++}`,
               subjectId: subj.id,
               name: subj.name,
               day: i,
@@ -418,7 +418,7 @@ function generateSchedule() {
 // Render Schedule
 function renderSchedule(filter = 'All') {
   if (schedule.length === 0) {
-    scheduleGridEl.innerHTML = \`<div class="empty-state" style="grid-column: 1/-1">Розклад порожній.</div>\`;
+    scheduleGridEl.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">Розклад порожній.</div>`;
     return;
   }
 
@@ -435,36 +435,36 @@ function renderSchedule(filter = 'All') {
   });
 
   if (Object.keys(grouped).length === 0) {
-    scheduleGridEl.innerHTML = \`<div class="empty-state" style="grid-column: 1/-1">Немає сесій для цього фільтра.</div>\`;
+    scheduleGridEl.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">Немає сесій для цього фільтра.</div>`;
     return;
   }
 
   scheduleGridEl.innerHTML = Object.keys(grouped).sort((a,b)=>Number(a)-Number(b)).map(dKey => {
     const day = grouped[dKey];
-    return \`
+    return `
       <div class="day-column">
         <div class="day-header">
-          <span>\${day.name}</span>
-          <span class="day-stats">\${day.total} хв</span>
+          <span>${day.name}</span>
+          <span class="day-stats">${day.total} хв</span>
         </div>
         <div class="session-list">
-          \${day.sessions.map(sess => \`
-            <div class="session-card status-\${sess.status}">
+          ${day.sessions.map(sess => `
+            <div class="session-card status-${sess.status}">
               <div class="session-header">
-                <h4>\${sess.name}</h4>
-                <span class="session-duration">\${sess.duration} хв</span>
+                <h4>${sess.name}</h4>
+                <span class="session-duration">${sess.duration} хв</span>
               </div>
-              \${sess.isHeavy ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
+              ${sess.isHeavy ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
               <div class="session-controls">
-                <button class="session-btn mark-pending \${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('\${sess.id}', 'Pending')">Очікує</button>
-                <button class="session-btn mark-completed \${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('\${sess.id}', 'Completed')">Готово</button>
-                <button class="session-btn mark-missed \${sess.status === 'Missed' ? 'active-Missed' : ''}" onclick="window.updateStatus('\${sess.id}', 'Missed')">Пропуск</button>
+                <button class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('${sess.id}', 'Pending')">Очікує</button>
+                <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
+                <button class="session-btn mark-missed ${sess.status === 'Missed' ? 'active-Missed' : ''}" onclick="window.updateStatus('${sess.id}', 'Missed')">Пропуск</button>
               </div>
             </div>
-          \`).join('')}
+          `).join('')}
         </div>
       </div>
-    \`;
+    `;
   }).join('');
 }
 
