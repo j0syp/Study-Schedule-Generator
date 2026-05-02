@@ -32,24 +32,7 @@ function init() {
   const day = String(todayObj.getDate()).padStart(2, '0');
   const todayStr = `${year}-${month}-${day}`;
   document.getElementById('input-deadline').min = todayStr;
-  
-  const inputStartDate = document.getElementById('input-start-date');
-  if (inputStartDate) {
-    inputStartDate.value = todayStr;
-  }
-  
   checkTotalTime();
-}
-
-function getStartDate() {
-  const input = document.getElementById('input-start-date');
-  if (input && input.value) {
-    const [y, m, d] = input.value.split('-');
-    return new Date(y, m - 1, d);
-  }
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  return today;
 }
 
 // Data Management
@@ -111,18 +94,14 @@ function showToast(message) {
 
 // Date Formatting Helpers
 function getFriendlyDateFromOffset(dayIndex) {
-  const d = getStartDate();
+  if (dayIndex === 0) return 'Сьогодні';
+  if (dayIndex === 1) return 'Завтра';
+  if (dayIndex === 2) return 'Післязавтра';
+  if (dayIndex < 0) return 'В минулому';
+  
+  const d = new Date();
+  d.setHours(0,0,0,0);
   d.setDate(d.getDate() + dayIndex);
-
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  
-  const actualDayOffset = Math.floor((d - today) / (1000 * 60 * 60 * 24));
-  
-  if (actualDayOffset === 0) return 'Сьогодні';
-  if (actualDayOffset === 1) return 'Завтра';
-  if (actualDayOffset === 2) return 'Післязавтра';
-  if (actualDayOffset < 0) return 'В минулому';
   
   const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
   const wDay = dayNames[d.getDay()];
@@ -134,10 +113,11 @@ function getFriendlyDateFromOffset(dayIndex) {
 
 function getFriendlyDateFromStr(dateStr) {
   if (!dateStr) return '';
-  const startDate = getStartDate();
+  const today = new Date();
+  today.setHours(0,0,0,0);
   const [y, m, d] = dateStr.split('-');
   const dVal = new Date(y, m - 1, d);
-  const dayIndex = Math.floor((dVal - startDate) / (1000 * 60 * 60 * 24));
+  const dayIndex = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
   return getFriendlyDateFromOffset(dayIndex);
 }
 
@@ -307,7 +287,8 @@ function renderSubjects() {
 function generateSchedule() {
   const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
   
-  const startDate = getStartDate();
+  const today = new Date();
+  today.setHours(0,0,0,0);
 
   // Classify all subjects into Cat V, B, A
   let catV = [];
@@ -320,7 +301,7 @@ function generateSchedule() {
       const [y, m, d] = subj.deadline.split('-');
       dVal = new Date(y, m - 1, d);
     }
-    const daysUntilDeadline = Math.floor((dVal - startDate) / (1000 * 60 * 60 * 24));
+    const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
     const daysAvailable = Math.max(1, daysUntilDeadline + 1);
 
     const minReq = Math.ceil(subj.time / daysAvailable);
