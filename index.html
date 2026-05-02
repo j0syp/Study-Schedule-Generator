@@ -41,8 +41,11 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label for="input-time">Час (хвилини)</label>
-                <input type="number" id="input-time" placeholder="120" min="30" max="450" step="15" required />
+                <label>Час</label>
+                <div class="form-row" style="gap: 8px; display: grid; grid-template-columns: 1fr 1fr;">
+                  <select id="input-time-h" required></select>
+                  <select id="input-time-m" required></select>
+                </div>
                 <div class="error-text" id="error-time">Від 30 до 450 хв</div>
               </div>
 

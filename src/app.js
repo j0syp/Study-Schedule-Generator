@@ -30,12 +30,22 @@ function init() {
   const month = todayObj.getMonth() + 1;
   const day = todayObj.getDate();
 
+  const monthNames = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
+
+  const hSel = document.getElementById('input-time-h');
+  for (let i = 0; i <= 9; i++) hSel.add(new Option(`${i} год`, i));
+  hSel.value = 2;
+
+  const mSel = document.getElementById('input-time-m');
+  [0, 15, 30, 45].forEach(m => mSel.add(new Option(`${m} хв`, m)));
+  mSel.value = 0;
+
   const daySel = document.getElementById('input-dl-day');
   for (let i = 1; i <= 31; i++) daySel.add(new Option(i, i));
   daySel.value = day;
 
   const monthSel = document.getElementById('input-dl-month');
-  for (let i = 1; i <= 12; i++) monthSel.add(new Option(i, i));
+  for (let i = 1; i <= 12; i++) monthSel.add(new Option(monthNames[i-1], i));
   monthSel.value = month;
 
   const yearSel = document.getElementById('input-dl-year');
@@ -113,11 +123,13 @@ function getFriendlyDateFromOffset(dayIndex) {
   d.setDate(d.getDate() + dayIndex);
   
   const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
+  const monthNamesGen = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
+  
   const wDay = dayNames[d.getDay()];
   const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const mm = monthNamesGen[d.getMonth()];
   
-  return `${wDay}, ${dd}.${mm}`;
+  return `${wDay}, ${dd} ${mm}`;
 }
 
 function getFriendlyDateFromStr(dateStr) {
@@ -148,13 +160,16 @@ function validateForm() {
     nameInput.parentElement.classList.remove('invalid');
   }
   
-  const timeInput = document.getElementById('input-time');
-  const timeVal = parseInt(timeInput.value, 10);
+  const hInput = document.getElementById('input-time-h');
+  const mInput = document.getElementById('input-time-m');
+  const timeVal = parseInt(hInput.value, 10) * 60 + parseInt(mInput.value, 10);
+  
+  const errorTime = document.getElementById('error-time');
   if (isNaN(timeVal) || timeVal < 30 || timeVal > 450) {
-    timeInput.parentElement.classList.add('invalid');
+    errorTime.parentElement.classList.add('invalid');
     isValid = false;
   } else {
-    timeInput.parentElement.classList.remove('invalid');
+    errorTime.parentElement.classList.remove('invalid');
   }
   
   const daySel = parseInt(document.getElementById('input-dl-day').value, 10);
@@ -183,7 +198,8 @@ function validateForm() {
 // Event Listeners
 function setupEventListeners() {
   document.getElementById('input-name').addEventListener('input', validateForm);
-  document.getElementById('input-time').addEventListener('input', validateForm);
+  document.getElementById('input-time-h').addEventListener('change', validateForm);
+  document.getElementById('input-time-m').addEventListener('change', validateForm);
   document.getElementById('input-dl-day').addEventListener('change', validateForm);
   document.getElementById('input-dl-month').addEventListener('change', validateForm);
   document.getElementById('input-dl-year').addEventListener('change', validateForm);
@@ -220,7 +236,7 @@ function handleFormSubmit(e) {
   const newSubj = {
     id,
     name: document.getElementById('input-name').value.trim(),
-    time: parseInt(document.getElementById('input-time').value, 10),
+    time: parseInt(document.getElementById('input-time-h').value, 10) * 60 + parseInt(document.getElementById('input-time-m').value, 10),
     deadline: deadlineStr,
     priority: document.getElementById('input-priority').value
   };
@@ -256,7 +272,8 @@ function editSubject(id) {
   
   editId = id;
   document.getElementById('input-name').value = subj.name;
-  document.getElementById('input-time').value = subj.time;
+  document.getElementById('input-time-h').value = Math.floor(subj.time / 60);
+  document.getElementById('input-time-m').value = subj.time % 60;
   const [y, m, d] = subj.deadline.split('-');
   document.getElementById('input-dl-year').value = parseInt(y, 10);
   document.getElementById('input-dl-month').value = parseInt(m, 10);
