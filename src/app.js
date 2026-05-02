@@ -126,23 +126,21 @@ function showToast(message) {
 
 // Date Formatting Helpers
 function getFriendlyDateFromOffset(dayIndex) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   if (dayIndex === 0) return 'Сьогодні';
   if (dayIndex === 1) return 'Завтра';
-  if (dayIndex === 2) return 'Післязавтра';
-  if (dayIndex < 0) return 'В минулому';
 
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + dayIndex);
+  const d = new Date(today);
+  d.setDate(today.getDate() + dayIndex);
 
-  const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
-  const monthNamesGen = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
-
-  const wDay = dayNames[d.getDay()];
+  const wDay = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][d.getDay()];
   const dd = String(d.getDate()).padStart(2, '0');
-  const mm = monthNamesGen[d.getMonth()];
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
 
-  return `${wDay}, ${dd} ${mm}`;
+  const datePart = `${wDay}, ${dd}.${mm}`;
+  return dayIndex < 0 ? `Минуле (${datePart})` : datePart;
 }
 
 function getFriendlyDateFromStr(dateStr) {
@@ -385,7 +383,7 @@ function generateSchedule() {
 
   schedule = [];
   const MAX_PER_DAY = 240;
-  const dayLoads = new Array(2000).fill(0); // Arbitrarily large array for schedule days
+  const dayLoads = new Array(3000).fill(0); // Safely covers >8 years to match UI's 5-year limit
   let sIdx = 0;
 
   // Helper to schedule a task trying to avoid loaded days
@@ -518,13 +516,21 @@ function renderSchedule(filter = 'All') {
   // Group by day
   const grouped = {};
   schedule.forEach(s => {
-    if (filter !== 'All' && s.status !== filter) return;
-
     if (!grouped[s.day]) {
       grouped[s.day] = { name: getFriendlyDateFromStr(s.dayDate), sessions: [], total: 0 };
     }
-    grouped[s.day].sessions.push(s);
+    // Рахуємо загальний час дня ЗАВЖДИ (для коректних варнінгів), незалежно від фільтра
     grouped[s.day].total += s.duration;
+
+    // Але додаємо в список тільки ті, що проходять фільтр
+    if (filter === 'All' || s.status === filter) {
+      grouped[s.day].sessions.push(s);
+    }
+  });
+
+  // Видаляємо дні, де ПІСЛЯ фільтрації не залишилось сесій (щоб не показувати порожні стовпчики)
+  Object.keys(grouped).forEach(k => {
+    if (grouped[k].sessions.length === 0) delete grouped[k];
   });
 
   if (Object.keys(grouped).length === 0) {
