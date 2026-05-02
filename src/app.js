@@ -330,81 +330,72 @@ function generateSchedule() {
     let daysAvailable = Math.min(daysUntilDeadline + 1, TOTAL_DAYS);
     if (daysAvailable <= 0) daysAvailable = 1;
 
+    let availableDays = [];
+    for (let i = 0; i < daysAvailable; i++) availableDays.push(i);
+    
+    let sessionDurations = new Map();
+    availableDays.forEach(d => sessionDurations.set(d, 0));
+
     if (subj.distribute) {
-      let timePerDay = Math.ceil(subj.time / daysAvailable);
       let remaining = subj.time;
-      for (let i = 0; i < daysAvailable; i++) {
+      while (remaining > 0) {
+        let minDay = availableDays[0];
+        let minLoad = dayLoads[minDay] + sessionDurations.get(minDay);
+        for (let d of availableDays) {
+          let currentLoad = dayLoads[d] + sessionDurations.get(d);
+          if (currentLoad < minLoad) {
+            minDay = d;
+            minLoad = currentLoad;
+          }
+        }
+        let chunk = Math.min(remaining, 5);
+        sessionDurations.set(minDay, sessionDurations.get(minDay) + chunk);
+        remaining -= chunk;
+      }
+    } else {
+      let remaining = subj.time;
+      let sortedDays = [...availableDays].sort((a, b) => dayLoads[a] - dayLoads[b]);
+      
+      for (let d of sortedDays) {
         if (remaining <= 0) break;
-        let chunk = i === daysAvailable - 1 ? remaining : timePerDay;
-        
+        let availableInDay = MAX_PER_DAY - dayLoads[d];
+        if (availableInDay > 0) {
+          let chunk = Math.min(remaining, availableInDay, MAX_PER_SESSION);
+          sessionDurations.set(d, chunk);
+          remaining -= chunk;
+        }
+      }
+      
+      while (remaining > 0) {
+        let minDay = availableDays[0];
+        let minLoad = dayLoads[minDay] + sessionDurations.get(minDay);
+        for (let d of availableDays) {
+          let currentLoad = dayLoads[d] + sessionDurations.get(d);
+          if (currentLoad < minLoad) {
+            minDay = d;
+            minLoad = currentLoad;
+          }
+        }
+        let chunk = Math.min(remaining, 30);
+        sessionDurations.set(minDay, sessionDurations.get(minDay) + chunk);
+        remaining -= chunk;
+      }
+    }
+
+    for (let d of availableDays) {
+      let dur = sessionDurations.get(d);
+      if (dur > 0) {
         schedule.push({
           id: `sess-${subj.id}-${sIdx++}`,
           subjectId: subj.id,
           name: subj.name,
-          day: i,
-          dayName: getDayName(i),
-          duration: chunk,
+          day: d,
+          dayName: getDayName(d),
+          duration: dur,
           status: 'Pending',
-          isHeavy: chunk > MAX_PER_SESSION
+          isHeavy: dur > MAX_PER_SESSION
         });
-        
-        dayLoads[i] += chunk;
-        remaining -= chunk;
-      }
-    } else {
-      let timeRemaining = subj.time;
-      let dayIdx = 0;
-      
-      // Try to distribute into max 120m chunks, ONE per day
-      while (timeRemaining > 0 && dayIdx < daysAvailable) {
-        const availableInDay = MAX_PER_DAY - dayLoads[dayIdx];
-        if (availableInDay > 0) {
-          const chunk = Math.min(timeRemaining, availableInDay, MAX_PER_SESSION);
-          
-          schedule.push({
-            id: `sess-${subj.id}-${sIdx++}`,
-            subjectId: subj.id,
-            name: subj.name,
-            day: dayIdx,
-            dayName: getDayName(dayIdx),
-            duration: chunk,
-            status: 'Pending',
-            isHeavy: false
-          });
-
-          dayLoads[dayIdx] += chunk;
-          timeRemaining -= chunk;
-        }
-        dayIdx++;
-      }
-      
-      // If time still remaining, we must force it into available days evenly
-      if (timeRemaining > 0) {
-        let extraPerDay = Math.ceil(timeRemaining / daysAvailable);
-        for (let i = 0; i < daysAvailable; i++) {
-          if (timeRemaining <= 0) break;
-          let extraChunk = i === daysAvailable - 1 ? timeRemaining : extraPerDay;
-          
-          // Find existing session on this day for this subject
-          let existingSess = schedule.find(s => s.subjectId === subj.id && s.day === i);
-          if (existingSess) {
-            existingSess.duration += extraChunk;
-            if (existingSess.duration > MAX_PER_SESSION) existingSess.isHeavy = true;
-          } else {
-            schedule.push({
-              id: `sess-${subj.id}-${sIdx++}`,
-              subjectId: subj.id,
-              name: subj.name,
-              day: i,
-              dayName: getDayName(i),
-              duration: extraChunk,
-              status: 'Pending',
-              isHeavy: extraChunk > MAX_PER_SESSION
-            });
-          }
-          dayLoads[i] += extraChunk;
-          timeRemaining -= extraChunk;
-        }
+        dayLoads[d] += dur;
       }
     }
   }
