@@ -13,8 +13,8 @@ The user needs to add subjects and then view a generated schedule. These represe
 - **Routing**: Single Page Application (SPA) where "pages" are switched by toggling CSS `display` properties between the Form/List view and the Schedule view.
 - **State**: Maintained in two global JavaScript arrays: `subjects` and `schedule`.
 - **Data Model**:
-  - **Subject**: `{ id: string, name: string, time: number, deadline: string, difficulty: 'Легко' | 'Середньо' | 'Складно' }`
-  - **Schedule Session**: `{ id: string, subjectId: string, name: string, day: number, duration: number, status: 'Pending' | 'Completed' | 'Missed' }`
+  - **Subject**: `{ id: string, name: string, time: number, deadline: string, priority: 'Низький' | 'Середній' | 'Високий' }`
+  - **Schedule Session**: `{ id: string, subjectId: string, name: string, day: number, dayName: string, duration: number, status: 'Pending' | 'Completed' | 'Missed', isHeavy: boolean, isCritical: boolean }`
 
 ## Options considered
 - Client-side router (e.g., hash router)
