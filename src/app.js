@@ -18,6 +18,7 @@ const btnBack = document.getElementById('btn-back');
 const btnClearSchedule = document.getElementById('btn-clear-schedule');
 const toastEl = document.getElementById('toast');
 const btnResetDemo = document.getElementById('btn-reset-demo');
+const btnDeleteAllSubjects = document.getElementById('btn-delete-all');
 const filterBtns = document.querySelectorAll('.filter-btn');
 
 // Form elements cache
@@ -215,6 +216,8 @@ function setupEventListeners() {
 
   btnResetDemo.addEventListener('click', loadDemoData);
 
+  btnDeleteAllSubjects.addEventListener('click', deleteAllSubjects);
+
   btnGenerate.addEventListener('click', generateSchedule);
 
   btnBack.addEventListener('click', () => {
@@ -294,12 +297,25 @@ function editSubject(id) {
   validateForm();
 }
 
+function deleteAllSubjects() {
+  if (subjects.length === 0) return;
+  if (confirm('Ви впевнені, що хочете видалити ВСІ предмети зі списку?')) {
+    subjects = [];
+    saveData();
+    renderSubjects();
+    checkTotalTime();
+    showToast('Всі предмети видалено');
+  }
+}
+
 function deleteSubject(id) {
-  subjects = subjects.filter(s => s.id !== id);
-  saveData();
-  renderSubjects();
-  checkTotalTime();
-  showToast('Предмет видалено');
+  if (confirm('Видалити цей предмет?')) {
+    subjects = subjects.filter(s => s.id !== id);
+    saveData();
+    renderSubjects();
+    checkTotalTime();
+    showToast('Предмет видалено');
+  }
 }
 
 // Rendering Subjects
@@ -334,6 +350,7 @@ function renderSubjects() {
 
   // Також блокуємо всю форму додавання нових предметів
   setFormLocked(isGenerated);
+  checkTotalTime();
 }
 
 // Generation Logic
@@ -354,7 +371,7 @@ function generateSchedule() {
       const [y, m, d] = subj.deadline.split('-');
       dVal = new Date(y, m - 1, d);
     }
-    const daysUntilDeadline = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
+    const daysUntilDeadline = Math.round((dVal - today) / (1000 * 60 * 60 * 24));
     const daysAvailable = Math.max(1, daysUntilDeadline + 1);
 
     const minReq = Math.ceil(subj.time / daysAvailable);
@@ -592,6 +609,7 @@ function clearSchedule() {
 // Global scope bindings
 window.editSubject = editSubject;
 window.deleteSubject = deleteSubject;
+window.deleteAllSubjects = deleteAllSubjects;
 window.updateStatus = updateStatus;
 window.clearSchedule = clearSchedule;
 
