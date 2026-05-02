@@ -34,61 +34,80 @@ const inputDlYear = document.getElementById('input-dl-year');
 
 // Helper: lock or unlock all form fields
 function setFormLocked(locked) {
-  btnSubmit.disabled = locked;
-  inputName.disabled = locked;
-  inputTime.disabled = locked;
-  inputPriority.disabled = locked;
-  inputDlDay.disabled = locked;
-  inputDlMonth.disabled = locked;
-  inputDlYear.disabled = locked;
-  btnDeleteAllSubjects.disabled = locked;
+  const isActuallyLocked = !!locked;
+  inputName.disabled = isActuallyLocked;
+  inputTime.disabled = isActuallyLocked;
+  inputPriority.disabled = isActuallyLocked;
+  inputDlDay.disabled = isActuallyLocked;
+  inputDlMonth.disabled = isActuallyLocked;
+  inputDlYear.disabled = isActuallyLocked;
+  btnDeleteAllSubjects.disabled = isActuallyLocked;
+
+  // Submit button is disabled if form is locked OR if it's invalid
+  btnSubmit.disabled = isActuallyLocked || !validateForm(false);
 }
 
 // Initialize
 function init() {
-  loadData();
-  renderSubjects();
-  setupEventListeners();
-
+  // 1. Date selects population first
   const todayObj = new Date();
   const year = todayObj.getFullYear();
   const month = todayObj.getMonth() + 1;
   const day = todayObj.getDate();
-
   const monthNames = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
 
   for (let i = 1; i <= 31; i++) {
     const isDef = (i === day);
     inputDlDay.add(new Option(i, i, isDef, isDef));
   }
-
   for (let i = 1; i <= 12; i++) {
     const isDef = (i === month);
     inputDlMonth.add(new Option(monthNames[i - 1], i, isDef, isDef));
   }
-
   for (let i = year; i <= year + 5; i++) {
     const isDef = (i === year);
     inputDlYear.add(new Option(i, i, isDef, isDef));
   }
 
+  // 2. Load data and setup UI
+  loadData();
+  setupEventListeners();
+  renderSubjects(); // This will call setFormLocked
   checkTotalTime();
+  validateForm(false); // Initial silent validation
 }
 
 // Data Management
 function loadData() {
-  const sData = localStorage.getItem(STORAGE_SUBJECTS_KEY);
-  if (sData) subjects = JSON.parse(sData);
-  const schData = localStorage.getItem(STORAGE_SCHEDULE_KEY);
-  if (schData) schedule = JSON.parse(schData);
+  try {
+    const sData = localStorage.getItem(STORAGE_SUBJECTS_KEY);
+    if (sData) subjects = JSON.parse(sData);
+    if (!Array.isArray(subjects)) subjects = [];
+
+    const schData = localStorage.getItem(STORAGE_SCHEDULE_KEY);
+    if (schData) schedule = JSON.parse(schData);
+    if (!Array.isArray(schedule)) schedule = [];
+  } catch (e) {
+    console.warn('LocalStorage access failed', e);
+    subjects = [];
+    schedule = [];
+  }
 }
 
 function saveData() {
-  localStorage.setItem(STORAGE_SUBJECTS_KEY, JSON.stringify(subjects));
+  try {
+    localStorage.setItem(STORAGE_SUBJECTS_KEY, JSON.stringify(subjects));
+  } catch (e) {
+    console.error('Save failed', e);
+  }
 }
 
 function saveSchedule() {
-  localStorage.setItem(STORAGE_SCHEDULE_KEY, JSON.stringify(schedule));
+  try {
+    localStorage.setItem(STORAGE_SCHEDULE_KEY, JSON.stringify(schedule));
+  } catch (e) {
+    console.error('Save schedule failed', e);
+  }
 }
 
 async function loadDemoData() {
@@ -179,17 +198,12 @@ function getFriendlyDateFromStr(dateStr) {
 }
 
 // Form & Validation
-function checkTotalTime() {
-  const total = subjects.reduce((sum, s) => sum + s.time, 0);
-  statTotalTime.textContent = total;
-  btnGenerate.disabled = subjects.length === 0 || schedule.length > 0;
-}
-
-function validateForm() {
+function validateForm(showErrors = true) {
   let isValid = true;
 
-  if (inputName.value.trim().length < 3) {
-    inputName.parentElement.classList.add('invalid');
+  const nameVal = inputName.value.trim();
+  if (nameVal.length < 3) {
+    if (showErrors && nameVal.length > 0) inputName.parentElement.classList.add('invalid');
     isValid = false;
   } else {
     inputName.parentElement.classList.remove('invalid');
@@ -197,7 +211,7 @@ function validateForm() {
 
   const timeVal = parseInt(inputTime.value, 10);
   if (isNaN(timeVal)) {
-    inputTime.parentElement.classList.add('invalid');
+    if (showErrors && inputTime.value !== "") inputTime.parentElement.classList.add('invalid');
     isValid = false;
   } else {
     inputTime.parentElement.classList.remove('invalid');
@@ -215,7 +229,7 @@ function validateForm() {
 
   const errorDeadline = document.getElementById('error-deadline');
   if (!isDateValid || dVal < now) {
-    errorDeadline.parentElement.classList.add('invalid');
+    if (showErrors) errorDeadline.parentElement.classList.add('invalid');
     isValid = false;
   } else {
     errorDeadline.parentElement.classList.remove('invalid');
@@ -223,6 +237,12 @@ function validateForm() {
 
   btnSubmit.disabled = !isValid;
   return isValid;
+}
+
+function checkTotalTime() {
+  const total = subjects.reduce((sum, s) => sum + s.time, 0);
+  statTotalTime.textContent = total;
+  btnGenerate.disabled = subjects.length === 0 || schedule.length > 0;
 }
 
 // Event Listeners
