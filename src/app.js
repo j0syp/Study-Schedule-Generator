@@ -280,7 +280,7 @@ function generateSchedule() {
   
   // Array of 7 days (0: Monday ... 6: Sunday)
   const dayLoads = [0, 0, 0, 0, 0, 0, 0];
-  const dayNames = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П'ятниця', 'Субота', 'Неділя'];
+  const dayNames = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя'];
   
   let dayIndex = 0;
 
