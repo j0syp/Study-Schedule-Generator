@@ -40,16 +40,21 @@
             </div>
 
             <div class="form-row">
-              <div class="form-group">
-                <label>Час</label>
-                <div class="form-row" style="gap: 8px; display: grid; grid-template-columns: 1fr 1fr;">
-                  <select id="input-time-h" required></select>
-                  <select id="input-time-m" required></select>
+              <div class="form-group" id="time-group" style="flex: 2;">
+                <div class="form-row" style="margin-bottom: 0;">
+                  <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label>Години</label>
+                    <select id="input-time-h" required></select>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label>Хвилини</label>
+                    <select id="input-time-m" required></select>
+                  </div>
                 </div>
-                <div class="error-text" id="error-time">Від 30 до 450 хв</div>
+                <div class="error-text" id="error-time" style="margin-top: 5px;">Від 30 до 450 хв</div>
               </div>
 
-              <div class="form-group">
+              <div class="form-group" style="flex: 1;">
                 <label for="input-priority">Пріоритет</label>
                 <select id="input-priority" required>
                   <option value="Низький">Низький</option>
@@ -63,9 +68,18 @@
             <div class="form-group">
               <label>Дедлайн</label>
               <div class="form-row" style="gap: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr;">
-                <select id="input-dl-day" required></select>
-                <select id="input-dl-month" required></select>
-                <select id="input-dl-year" required></select>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">День</label>
+                  <select id="input-dl-day" required></select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">Місяць</label>
+                  <select id="input-dl-month" required></select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">Рік</label>
+                  <select id="input-dl-year" required></select>
+                </div>
               </div>
               <div class="error-text" id="error-deadline">Дата не може бути в минулому або недійсною</div>
             </div>

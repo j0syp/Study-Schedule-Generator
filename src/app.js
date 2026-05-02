@@ -33,11 +33,11 @@ function init() {
   const monthNames = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
 
   const hSel = document.getElementById('input-time-h');
-  for (let i = 0; i <= 9; i++) hSel.add(new Option(`${i} год`, i));
+  for (let i = 0; i <= 9; i++) hSel.add(new Option(i, i));
   hSel.value = 2;
 
   const mSel = document.getElementById('input-time-m');
-  [0, 15, 30, 45].forEach(m => mSel.add(new Option(`${m} хв`, m)));
+  [0, 15, 30, 45].forEach(m => mSel.add(new Option(m, m)));
   mSel.value = 0;
 
   const daySel = document.getElementById('input-dl-day');
