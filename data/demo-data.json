@@ -4,27 +4,31 @@
     "name": "Вища математика",
     "time": 400,
     "deadline": "2026-05-06",
-    "priority": "Високий"
+    "priority": "Високий",
+    "distribute": true
   },
   {
     "id": "demo-2",
     "name": "Історія України",
     "time": 100,
     "deadline": "2026-05-05",
-    "priority": "Середній"
+    "priority": "Середній",
+    "distribute": false
   },
   {
     "id": "demo-3",
     "name": "Програмування (JavaScript)",
     "time": 600,
     "deadline": "2026-05-12",
-    "priority": "Високий"
+    "priority": "Високий",
+    "distribute": true
   },
   {
     "id": "demo-4",
     "name": "Англійська мова",
     "time": 180,
     "deadline": "2026-05-15",
-    "priority": "Низький"
+    "priority": "Низький",
+    "distribute": false
   }
 ]

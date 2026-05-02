@@ -108,7 +108,6 @@ function checkTotalTime() {
   const maxTime = getMaxTime();
   
   document.getElementById('stat-total-time').textContent = total;
-  document.getElementById('stat-max-time').textContent = maxTime;
   document.getElementById('stat-max-error').textContent = maxTime;
   
   if (total > maxTime) {
@@ -167,7 +166,7 @@ function setupEventListeners() {
   document.getElementById('input-name').addEventListener('input', validateForm);
   document.getElementById('input-time').addEventListener('input', validateForm);
   document.getElementById('input-deadline').addEventListener('input', validateForm);
-  document.getElementById('input-weeks').addEventListener('input', checkTotalTime);
+  document.getElementById('input-weeks').addEventListener('change', checkTotalTime);
   
   formSubject.addEventListener('submit', handleFormSubmit);
   
@@ -198,7 +197,8 @@ function handleFormSubmit(e) {
     name: document.getElementById('input-name').value.trim(),
     time: parseInt(document.getElementById('input-time').value, 10),
     deadline: document.getElementById('input-deadline').value,
-    priority: document.getElementById('input-priority').value
+    priority: document.getElementById('input-priority').value,
+    distribute: document.getElementById('input-distribute').checked
   };
 
   if (editId) {
@@ -235,6 +235,7 @@ function editSubject(id) {
   document.getElementById('input-time').value = subj.time;
   document.getElementById('input-deadline').value = subj.deadline;
   document.getElementById('input-priority').value = subj.priority;
+  document.getElementById('input-distribute').checked = !!subj.distribute;
   
   document.getElementById('form-title').textContent = 'Редагувати предмет';
   document.getElementById('btn-submit').textContent = 'Зберегти зміни';
@@ -263,7 +264,7 @@ function renderSubjects() {
   subjectListEl.innerHTML = subjects.map(s => `
     <div class="subject-item">
       <div class="subject-info">
-        <h3>${s.name}</h3>
+        <h3>${s.name} ${s.distribute ? '<span style="font-size:0.75rem; color:var(--primary);">(Рівномірно)</span>' : ''}</h3>
         <div class="subject-meta">
           <span>⏳ ${s.time} хв</span>
           <span>📅 ${s.deadline}</span>
@@ -282,7 +283,6 @@ function renderSubjects() {
 function generateSchedule() {
   const weeks = getWeeks();
   const maxTime = getMaxTime();
-  const distributeEvenly = document.getElementById('input-distribute').checked;
 
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
   if (total > maxTime) {
@@ -311,12 +311,11 @@ function generateSchedule() {
   function getDayName(dayIndex) {
     const w = Math.floor(dayIndex / 7) + 1;
     const d = baseDayNames[dayIndex % 7];
-    return weeks > 1 ? `Тиждень ${w}, ${d}` : d;
+    return weeks > 1 ? \`Тиждень \${w}, \${d}\` : d;
   }
 
   const today = new Date();
   today.setHours(0,0,0,0);
-  let defaultDayIndex = 0;
 
   for (const subj of sorted) {
     let sIdx = 0;
@@ -331,7 +330,7 @@ function generateSchedule() {
     let daysAvailable = Math.min(daysUntilDeadline + 1, TOTAL_DAYS);
     if (daysAvailable <= 0) daysAvailable = 1;
 
-    if (distributeEvenly) {
+    if (subj.distribute) {
       let timePerDay = Math.ceil(subj.time / daysAvailable);
       let remaining = subj.time;
       for (let i = 0; i < daysAvailable; i++) {
@@ -339,7 +338,7 @@ function generateSchedule() {
         let chunk = i === daysAvailable - 1 ? remaining : timePerDay;
         
         schedule.push({
-          id: `sess-${subj.id}-${sIdx++}`,
+          id: \`sess-\${subj.id}-\${sIdx++}\`,
           subjectId: subj.id,
           name: subj.name,
           day: i,
@@ -354,33 +353,57 @@ function generateSchedule() {
       }
     } else {
       let timeRemaining = subj.time;
-      while (timeRemaining > 0) {
-        if (defaultDayIndex >= TOTAL_DAYS) break;
-        
-        const availableInDay = MAX_PER_DAY - dayLoads[defaultDayIndex];
-        if (availableInDay <= 0) {
-          defaultDayIndex++;
-          continue;
+      let dayIdx = 0;
+      
+      // Try to distribute into max 120m chunks, ONE per day
+      while (timeRemaining > 0 && dayIdx < daysAvailable) {
+        const availableInDay = MAX_PER_DAY - dayLoads[dayIdx];
+        if (availableInDay > 0) {
+          const chunk = Math.min(timeRemaining, availableInDay, MAX_PER_SESSION);
+          
+          schedule.push({
+            id: \`sess-\${subj.id}-\${sIdx++}\`,
+            subjectId: subj.id,
+            name: subj.name,
+            day: dayIdx,
+            dayName: getDayName(dayIdx),
+            duration: chunk,
+            status: 'Pending',
+            isHeavy: false
+          });
+
+          dayLoads[dayIdx] += chunk;
+          timeRemaining -= chunk;
         }
-
-        const chunk = Math.min(timeRemaining, availableInDay, MAX_PER_SESSION);
-        
-        schedule.push({
-          id: `sess-${subj.id}-${sIdx++}`,
-          subjectId: subj.id,
-          name: subj.name,
-          day: defaultDayIndex,
-          dayName: getDayName(defaultDayIndex),
-          duration: chunk,
-          status: 'Pending',
-          isHeavy: false
-        });
-
-        dayLoads[defaultDayIndex] += chunk;
-        timeRemaining -= chunk;
-        
-        if (dayLoads[defaultDayIndex] >= MAX_PER_DAY) {
-          defaultDayIndex++;
+        dayIdx++;
+      }
+      
+      // If time still remaining, we must force it into available days evenly
+      if (timeRemaining > 0) {
+        let extraPerDay = Math.ceil(timeRemaining / daysAvailable);
+        for (let i = 0; i < daysAvailable; i++) {
+          if (timeRemaining <= 0) break;
+          let extraChunk = i === daysAvailable - 1 ? timeRemaining : extraPerDay;
+          
+          // Find existing session on this day for this subject
+          let existingSess = schedule.find(s => s.subjectId === subj.id && s.day === i);
+          if (existingSess) {
+            existingSess.duration += extraChunk;
+            if (existingSess.duration > MAX_PER_SESSION) existingSess.isHeavy = true;
+          } else {
+            schedule.push({
+              id: \`sess-\${subj.id}-\${sIdx++}\`,
+              subjectId: subj.id,
+              name: subj.name,
+              day: i,
+              dayName: getDayName(i),
+              duration: extraChunk,
+              status: 'Pending',
+              isHeavy: extraChunk > MAX_PER_SESSION
+            });
+          }
+          dayLoads[i] += extraChunk;
+          timeRemaining -= extraChunk;
         }
       }
     }
@@ -395,7 +418,7 @@ function generateSchedule() {
 // Render Schedule
 function renderSchedule(filter = 'All') {
   if (schedule.length === 0) {
-    scheduleGridEl.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">Розклад порожній.</div>`;
+    scheduleGridEl.innerHTML = \`<div class="empty-state" style="grid-column: 1/-1">Розклад порожній.</div>\`;
     return;
   }
 
@@ -412,36 +435,36 @@ function renderSchedule(filter = 'All') {
   });
 
   if (Object.keys(grouped).length === 0) {
-    scheduleGridEl.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">Немає сесій для цього фільтра.</div>`;
+    scheduleGridEl.innerHTML = \`<div class="empty-state" style="grid-column: 1/-1">Немає сесій для цього фільтра.</div>\`;
     return;
   }
 
-  scheduleGridEl.innerHTML = Object.keys(grouped).sort().map(dKey => {
+  scheduleGridEl.innerHTML = Object.keys(grouped).sort((a,b)=>Number(a)-Number(b)).map(dKey => {
     const day = grouped[dKey];
-    return `
+    return \`
       <div class="day-column">
         <div class="day-header">
-          <span>${day.name}</span>
-          <span class="day-stats">${day.total} хв</span>
+          <span>\${day.name}</span>
+          <span class="day-stats">\${day.total} хв</span>
         </div>
         <div class="session-list">
-          ${day.sessions.map(sess => `
-            <div class="session-card status-${sess.status}">
+          \${day.sessions.map(sess => \`
+            <div class="session-card status-\${sess.status}">
               <div class="session-header">
-                <h4>${sess.name}</h4>
-                <span class="session-duration">${sess.duration} хв</span>
+                <h4>\${sess.name}</h4>
+                <span class="session-duration">\${sess.duration} хв</span>
               </div>
-              ${sess.isHeavy ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
+              \${sess.isHeavy ? '<span class="warning-heavy-load">⚠️ Завелике навантаження, робіть перерви!</span>' : ''}
               <div class="session-controls">
-                <button class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('${sess.id}', 'Pending')">Очікує</button>
-                <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
-                <button class="session-btn mark-missed ${sess.status === 'Missed' ? 'active-Missed' : ''}" onclick="window.updateStatus('${sess.id}', 'Missed')">Пропуск</button>
+                <button class="session-btn mark-pending \${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('\${sess.id}', 'Pending')">Очікує</button>
+                <button class="session-btn mark-completed \${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('\${sess.id}', 'Completed')">Готово</button>
+                <button class="session-btn mark-missed \${sess.status === 'Missed' ? 'active-Missed' : ''}" onclick="window.updateStatus('\${sess.id}', 'Missed')">Пропуск</button>
               </div>
             </div>
-          `).join('')}
+          \`).join('')}
         </div>
       </div>
-    `;
+    \`;
   }).join('');
 }
 
@@ -455,10 +478,10 @@ function updateStatus(sessionId, newStatus) {
   }
 }
 
-// Expose to window for inline handlers
+// Global scope bindings
 window.editSubject = editSubject;
 window.deleteSubject = deleteSubject;
 window.updateStatus = updateStatus;
 
-// Boot
-document.addEventListener('DOMContentLoaded', init);
+// Start app
+init();

@@ -63,6 +63,13 @@
               <div class="error-text" id="error-deadline">Дата не може бути в минулому</div>
             </div>
 
+            <div class="form-group checkbox-group" style="margin-top: -5px; margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="input-distribute" style="width: auto; margin: 0;" />
+                <span style="margin: 0; color: var(--text-main);">Рівномірно розподілити до дедлайну</span>
+              </label>
+            </div>
+
             <div class="form-actions">
               <button type="submit" id="btn-submit" class="btn btn-primary btn-full" disabled>Додати предмет</button>
               <button type="button" id="btn-cancel-edit" class="btn btn-secondary btn-full hidden">Скасувати редагування</button>
@@ -74,8 +81,14 @@
         <div class="panel list-panel glass">
           <div class="panel-header">
             <h2>Список завдань</h2>
-            <div class="stats">
-              Загалом: <span id="stat-total-time">0</span> хв / <span id="stat-max-time">1680</span> хв
+            <div class="stats" style="display: flex; align-items: center; gap: 8px;">
+              Загалом: <span id="stat-total-time">0</span> хв / 
+              <select id="input-weeks" style="width: auto; padding: 2px 8px; font-size: 0.8rem; background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--panel-border); border-radius: 4px; cursor: pointer;">
+                <option value="1">1 тиждень (1680 хв)</option>
+                <option value="2">2 тижні (3360 хв)</option>
+                <option value="3">3 тижні (5040 хв)</option>
+                <option value="4">4 тижні (6720 хв)</option>
+              </select>
             </div>
           </div>
           
@@ -90,22 +103,6 @@
             <div id="generation-error" class="error-box hidden">
               Перевищено ліміт часу (макс <span id="stat-max-error">1680</span> хв). Зменште навантаження.
             </div>
-            
-            <div class="generation-options">
-              <div class="form-row">
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label for="input-weeks">Кількість тижнів (1-4)</label>
-                  <input type="number" id="input-weeks" min="1" max="4" value="1" />
-                </div>
-              </div>
-              <div class="form-group checkbox-group" style="margin-top: 10px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" id="input-distribute" style="width: auto;" />
-                  <span>Розподілити навантаження на всі доступні дні</span>
-                </label>
-              </div>
-            </div>
-
             <button id="btn-generate" class="btn btn-accent btn-full btn-large">✨ Згенерувати розклад</button>
           </div>
         </div>
