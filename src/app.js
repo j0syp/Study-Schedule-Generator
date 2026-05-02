@@ -25,13 +25,22 @@ function init() {
   renderSubjects();
   setupEventListeners();
   
-  // Set min date for deadline to today in local timezone
   const todayObj = new Date();
   const year = todayObj.getFullYear();
-  const month = String(todayObj.getMonth() + 1).padStart(2, '0');
-  const day = String(todayObj.getDate()).padStart(2, '0');
-  const todayStr = `${year}-${month}-${day}`;
-  document.getElementById('input-deadline').min = todayStr;
+  const month = todayObj.getMonth() + 1;
+  const day = todayObj.getDate();
+
+  const daySel = document.getElementById('input-dl-day');
+  for (let i = 1; i <= 31; i++) daySel.add(new Option(i, i));
+  daySel.value = day;
+
+  const monthSel = document.getElementById('input-dl-month');
+  for (let i = 1; i <= 12; i++) monthSel.add(new Option(i, i));
+  monthSel.value = month;
+
+  const yearSel = document.getElementById('input-dl-year');
+  for (let i = year; i <= year + 5; i++) yearSel.add(new Option(i, i));
+  yearSel.value = year;
   checkTotalTime();
 }
 
@@ -141,26 +150,29 @@ function validateForm() {
   
   const timeInput = document.getElementById('input-time');
   const timeVal = parseInt(timeInput.value, 10);
-  if (isNaN(timeVal) || timeVal < 30 || timeVal > 1440) {
+  if (isNaN(timeVal) || timeVal < 30 || timeVal > 450) {
     timeInput.parentElement.classList.add('invalid');
     isValid = false;
   } else {
     timeInput.parentElement.classList.remove('invalid');
   }
   
-  const deadlineInput = document.getElementById('input-deadline');
-  let dVal = new Date(0); // fallback
-  if (deadlineInput.value) {
-    const [y, m, d] = deadlineInput.value.split('-');
-    dVal = new Date(y, m - 1, d);
-  }
+  const daySel = parseInt(document.getElementById('input-dl-day').value, 10);
+  const monthSel = parseInt(document.getElementById('input-dl-month').value, 10);
+  const yearSel = parseInt(document.getElementById('input-dl-year').value, 10);
+  
+  let dVal = new Date(yearSel, monthSel - 1, daySel);
+  const isDateValid = dVal.getFullYear() === yearSel && dVal.getMonth() === monthSel - 1 && dVal.getDate() === daySel;
+
   const now = new Date();
   now.setHours(0,0,0,0);
-  if (!deadlineInput.value || dVal < now) {
-    deadlineInput.parentElement.classList.add('invalid');
+  
+  const errorDeadline = document.getElementById('error-deadline');
+  if (!isDateValid || dVal < now) {
+    errorDeadline.parentElement.classList.add('invalid');
     isValid = false;
   } else {
-    deadlineInput.parentElement.classList.remove('invalid');
+    errorDeadline.parentElement.classList.remove('invalid');
   }
 
   const btnSubmit = document.getElementById('btn-submit');
@@ -172,7 +184,9 @@ function validateForm() {
 function setupEventListeners() {
   document.getElementById('input-name').addEventListener('input', validateForm);
   document.getElementById('input-time').addEventListener('input', validateForm);
-  document.getElementById('input-deadline').addEventListener('input', validateForm);
+  document.getElementById('input-dl-day').addEventListener('change', validateForm);
+  document.getElementById('input-dl-month').addEventListener('change', validateForm);
+  document.getElementById('input-dl-year').addEventListener('change', validateForm);
   
   formSubject.addEventListener('submit', handleFormSubmit);
   
@@ -198,11 +212,16 @@ function handleFormSubmit(e) {
   if (!validateForm()) return;
 
   const id = editId || 'subj-' + Date.now();
+  const daySel = document.getElementById('input-dl-day').value;
+  const monthSel = document.getElementById('input-dl-month').value;
+  const yearSel = document.getElementById('input-dl-year').value;
+  const deadlineStr = `${yearSel}-${String(monthSel).padStart(2, '0')}-${String(daySel).padStart(2, '0')}`;
+
   const newSubj = {
     id,
     name: document.getElementById('input-name').value.trim(),
     time: parseInt(document.getElementById('input-time').value, 10),
-    deadline: document.getElementById('input-deadline').value,
+    deadline: deadlineStr,
     priority: document.getElementById('input-priority').value
   };
 
@@ -238,7 +257,10 @@ function editSubject(id) {
   editId = id;
   document.getElementById('input-name').value = subj.name;
   document.getElementById('input-time').value = subj.time;
-  document.getElementById('input-deadline').value = subj.deadline;
+  const [y, m, d] = subj.deadline.split('-');
+  document.getElementById('input-dl-year').value = parseInt(y, 10);
+  document.getElementById('input-dl-month').value = parseInt(m, 10);
+  document.getElementById('input-dl-day').value = parseInt(d, 10);
   document.getElementById('input-priority').value = subj.priority;
   
   document.getElementById('form-title').textContent = 'Редагувати предмет';

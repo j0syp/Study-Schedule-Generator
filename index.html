@@ -42,8 +42,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="input-time">Час (хвилини)</label>
-                <input type="number" id="input-time" placeholder="120" min="30" max="1440" step="5" required />
-                <div class="error-text" id="error-time">Від 30 до 1440 хв</div>
+                <input type="number" id="input-time" placeholder="120" min="30" max="450" step="15" required />
+                <div class="error-text" id="error-time">Від 30 до 450 хв</div>
               </div>
 
               <div class="form-group">
@@ -58,9 +58,13 @@
             </div>
 
             <div class="form-group">
-              <label for="input-deadline">Дедлайн</label>
-              <input type="date" id="input-deadline" required />
-              <div class="error-text" id="error-deadline">Дата не може бути в минулому</div>
+              <label>Дедлайн</label>
+              <div class="form-row" style="gap: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr;">
+                <select id="input-dl-day" required></select>
+                <select id="input-dl-month" required></select>
+                <select id="input-dl-year" required></select>
+              </div>
+              <div class="error-text" id="error-deadline">Дата не може бути в минулому або недійсною</div>
             </div>
 
             <div class="form-actions">
