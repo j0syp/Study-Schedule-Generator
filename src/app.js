@@ -92,6 +92,35 @@ function showToast(message) {
   }, 3000);
 }
 
+// Date Formatting Helpers
+function getFriendlyDateFromOffset(dayIndex) {
+  if (dayIndex === 0) return 'Сьогодні';
+  if (dayIndex === 1) return 'Завтра';
+  if (dayIndex === 2) return 'Післязавтра';
+  if (dayIndex < 0) return 'В минулому';
+  
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + dayIndex);
+  
+  const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
+  const wDay = dayNames[d.getDay()];
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  
+  return `${wDay}, ${dd}.${mm}`;
+}
+
+function getFriendlyDateFromStr(dateStr) {
+  if (!dateStr) return '';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const [y, m, d] = dateStr.split('-');
+  const dVal = new Date(y, m - 1, d);
+  const dayIndex = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
+  return getFriendlyDateFromOffset(dayIndex);
+}
+
 // Form & Validation
 function checkTotalTime() {
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
@@ -242,7 +271,7 @@ function renderSubjects() {
         <h3>${s.name}</h3>
         <div class="subject-meta">
           <span>⏳ ${s.time} хв</span>
-          <span>📅 ${s.deadline}</span>
+          <span title="${s.deadline}">📅 ${getFriendlyDateFromStr(s.deadline)}</span>
           <span class="badge ${s.priority}">${s.priority}</span>
         </div>
       </div>
@@ -304,22 +333,6 @@ function generateSchedule() {
   const dayLoads = new Array(365).fill(0); // Arbitrarily large array for schedule days
   let sIdx = 0;
 
-  function getDayName(dayIndex) {
-    if (dayIndex === 0) return 'Сьогодні';
-    if (dayIndex === 1) return 'Завтра';
-    if (dayIndex === 2) return 'Післязавтра';
-    
-    const d = new Date(today);
-    d.setDate(d.getDate() + dayIndex);
-    
-    const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
-    const wDay = dayNames[d.getDay()];
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    
-    return `${wDay}, ${dd}.${mm}`;
-  }
-
   // Helper to schedule a task trying to avoid loaded days
   function scheduleTask(subj, chunkLimit) {
     let remaining = subj.time;
@@ -340,7 +353,7 @@ function generateSchedule() {
           subjectId: subj.id,
           name: subj.name,
           day: d,
-          dayName: getDayName(d),
+          dayName: getFriendlyDateFromOffset(d),
           duration: chunk,
           status: 'Pending',
           isHeavy: chunkLimit > 120, // Cat B is inherently heavy
@@ -368,7 +381,7 @@ function generateSchedule() {
             subjectId: subj.id,
             name: subj.name,
             day: d,
-            dayName: getDayName(d),
+            dayName: getFriendlyDateFromOffset(d),
             duration: chunk,
             status: 'Pending',
             isHeavy: chunkLimit > 120,
@@ -394,7 +407,7 @@ function generateSchedule() {
         subjectId: subj.id,
         name: subj.name,
         day: d,
-        dayName: getDayName(d),
+        dayName: getFriendlyDateFromOffset(d),
         duration: chunk,
         status: 'Pending',
         isHeavy: false,
