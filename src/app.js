@@ -125,6 +125,18 @@ function switchView(view) {
   }
 }
 
+function escapeHTML(str) {
+  if (!str) return '';
+  const charsToReplace = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  };
+  return str.replace(/[&<>'"]/g, tag => charsToReplace[tag] || tag);
+}
+
 function showToast(message) {
   toastEl.textContent = message;
   toastEl.classList.remove('hidden');
@@ -343,7 +355,7 @@ function renderSubjects() {
   subjectListEl.innerHTML = subjects.map(s => `
     <div class="subject-item">
       <div class="subject-info">
-        <h3>${s.name}</h3>
+        <h3>${escapeHTML(s.name)}</h3>
         <div class="subject-meta">
           <span>⏳ ${s.time} хв</span>
           <span title="${s.deadline}">📅 ${getFriendlyDateFromStr(s.deadline)}</span>
@@ -578,7 +590,7 @@ function renderSchedule(filter = 'All') {
           ${day.sessions.map(sess => `
             <div class="session-card status-${sess.status}">
               <div class="session-header">
-                <h4>${sess.name}</h4>
+                <h4>${escapeHTML(sess.name)}</h4>
                 <span class="session-duration">${sess.duration} хв</span>
               </div>
               <div class="session-controls">
