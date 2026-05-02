@@ -24,8 +24,8 @@ Using `localStorage` is extremely simple to implement (JSON parsing/stringifying
 
 ## Requirements touched
 - FR2. Керування списком
-- FR4. Зміна стану об'єкта
-- Межі проєкту: "Зберігайте все в LocalStorage браузера"
+- FR4. Зміна стану
+- 9. Припущення та обмеження: "зберігаючи виключно Vanilla JS + LocalStorage"
 
 ## Rejected options and rationale
 - In-memory state only: Rejected because data would be lost on refresh.

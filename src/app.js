@@ -19,12 +19,34 @@ const toastEl = document.getElementById('toast');
 const btnResetDemo = document.getElementById('btn-reset-demo');
 const filterBtns = document.querySelectorAll('.filter-btn');
 
+// Form elements cache
+const btnSubmit = document.getElementById('btn-submit');
+const btnCancelEdit = document.getElementById('btn-cancel-edit');
+const formTitle = document.getElementById('form-title');
+const inputName = document.getElementById('input-name');
+const inputTime = document.getElementById('input-time');
+const inputPriority = document.getElementById('input-priority');
+const inputDlDay = document.getElementById('input-dl-day');
+const inputDlMonth = document.getElementById('input-dl-month');
+const inputDlYear = document.getElementById('input-dl-year');
+
+// Helper: lock or unlock all form fields
+function setFormLocked(locked) {
+  btnSubmit.disabled = locked;
+  inputName.disabled = locked;
+  inputTime.disabled = locked;
+  inputPriority.disabled = locked;
+  inputDlDay.disabled = locked;
+  inputDlMonth.disabled = locked;
+  inputDlYear.disabled = locked;
+}
+
 // Initialize
 function init() {
   loadData();
   renderSubjects();
   setupEventListeners();
-  
+
   const todayObj = new Date();
   const year = todayObj.getFullYear();
   const month = todayObj.getMonth() + 1;
@@ -32,18 +54,15 @@ function init() {
 
   const monthNames = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
 
-  const daySel = document.getElementById('input-dl-day');
-  for (let i = 1; i <= 31; i++) daySel.add(new Option(i, i));
-  daySel.value = day;
+  for (let i = 1; i <= 31; i++) inputDlDay.add(new Option(i, i));
+  inputDlDay.value = day;
 
-  const monthSel = document.getElementById('input-dl-month');
-  for (let i = 1; i <= 12; i++) monthSel.add(new Option(monthNames[i-1], i));
-  monthSel.value = month;
+  for (let i = 1; i <= 12; i++) inputDlMonth.add(new Option(monthNames[i - 1], i));
+  inputDlMonth.value = month;
 
-  const yearSel = document.getElementById('input-dl-year');
-  for (let i = year; i <= year + 5; i++) yearSel.add(new Option(i, i));
-  yearSel.value = year;
-  
+  for (let i = year; i <= year + 5; i++) inputDlYear.add(new Option(i, i));
+  inputDlYear.value = year;
+
   checkTotalTime();
 }
 
@@ -110,25 +129,25 @@ function getFriendlyDateFromOffset(dayIndex) {
   if (dayIndex === 1) return 'Завтра';
   if (dayIndex === 2) return 'Післязавтра';
   if (dayIndex < 0) return 'В минулому';
-  
+
   const d = new Date();
-  d.setHours(0,0,0,0);
+  d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + dayIndex);
-  
+
   const dayNames = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота'];
   const monthNamesGen = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
-  
+
   const wDay = dayNames[d.getDay()];
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = monthNamesGen[d.getMonth()];
-  
+
   return `${wDay}, ${dd} ${mm}`;
 }
 
 function getFriendlyDateFromStr(dateStr) {
   if (!dateStr) return '';
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
   const [y, m, d] = dateStr.split('-');
   const dVal = new Date(y, m - 1, d);
   const dayIndex = Math.floor((dVal - today) / (1000 * 60 * 60 * 24));
@@ -138,40 +157,38 @@ function getFriendlyDateFromStr(dateStr) {
 // Form & Validation
 function checkTotalTime() {
   const total = subjects.reduce((sum, s) => sum + s.time, 0);
-  document.getElementById('stat-total-time').textContent = total;
-  btnGenerate.disabled = subjects.length === 0;
+  statTotalTime.textContent = total;
+  btnGenerate.disabled = subjects.length === 0 || schedule.length > 0;
 }
 
 function validateForm() {
   let isValid = true;
-  
-  const nameInput = document.getElementById('input-name');
-  if (nameInput.value.trim().length < 3) {
-    nameInput.parentElement.classList.add('invalid');
+
+  if (inputName.value.trim().length < 3) {
+    inputName.parentElement.classList.add('invalid');
     isValid = false;
   } else {
-    nameInput.parentElement.classList.remove('invalid');
+    inputName.parentElement.classList.remove('invalid');
   }
-  
-  const timeInput = document.getElementById('input-time');
-  const timeVal = parseInt(timeInput.value, 10);
-  if (isNaN(timeVal) || timeVal < 15 || timeVal > 600) {
-    timeInput.parentElement.classList.add('invalid');
+
+  const timeVal = parseInt(inputTime.value, 10);
+  if (isNaN(timeVal) || timeVal < 30 || timeVal > 600) {
+    inputTime.parentElement.classList.add('invalid');
     isValid = false;
   } else {
-    timeInput.parentElement.classList.remove('invalid');
+    inputTime.parentElement.classList.remove('invalid');
   }
-  
-  const daySel = parseInt(document.getElementById('input-dl-day').value, 10);
-  const monthSel = parseInt(document.getElementById('input-dl-month').value, 10);
-  const yearSel = parseInt(document.getElementById('input-dl-year').value, 10);
-  
-  let dVal = new Date(yearSel, monthSel - 1, daySel);
+
+  const daySel = parseInt(inputDlDay.value, 10);
+  const monthSel = parseInt(inputDlMonth.value, 10);
+  const yearSel = parseInt(inputDlYear.value, 10);
+
+  const dVal = new Date(yearSel, monthSel - 1, daySel);
   const isDateValid = dVal.getFullYear() === yearSel && dVal.getMonth() === monthSel - 1 && dVal.getDate() === daySel;
 
   const now = new Date();
-  now.setHours(0,0,0,0);
-  
+  now.setHours(0, 0, 0, 0);
+
   const errorDeadline = document.getElementById('error-deadline');
   if (!isDateValid || dVal < now) {
     errorDeadline.parentElement.classList.add('invalid');
@@ -180,29 +197,31 @@ function validateForm() {
     errorDeadline.parentElement.classList.remove('invalid');
   }
 
-  const btnSubmit = document.getElementById('btn-submit');
   btnSubmit.disabled = !isValid;
   return isValid;
 }
 
 // Event Listeners
 function setupEventListeners() {
-  document.getElementById('input-name').addEventListener('input', validateForm);
-  document.getElementById('input-time').addEventListener('input', validateForm);
-  document.getElementById('input-dl-day').addEventListener('change', validateForm);
-  document.getElementById('input-dl-month').addEventListener('change', validateForm);
-  document.getElementById('input-dl-year').addEventListener('change', validateForm);
-  
+  inputName.addEventListener('input', validateForm);
+  inputTime.addEventListener('input', validateForm);
+  inputDlDay.addEventListener('change', validateForm);
+  inputDlMonth.addEventListener('change', validateForm);
+  inputDlYear.addEventListener('change', validateForm);
+
   formSubject.addEventListener('submit', handleFormSubmit);
-  
-  document.getElementById('btn-cancel-edit').addEventListener('click', cancelEdit);
-  
+
+  btnCancelEdit.addEventListener('click', cancelEdit);
+
   btnResetDemo.addEventListener('click', loadDemoData);
-  
+
   btnGenerate.addEventListener('click', generateSchedule);
-  
-  btnBack.addEventListener('click', () => switchView('setup'));
-  
+
+  btnBack.addEventListener('click', () => {
+    switchView('setup');
+    renderSubjects();
+  });
+
   filterBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       filterBtns.forEach(b => b.classList.remove('active'));
@@ -217,23 +236,22 @@ function handleFormSubmit(e) {
   if (!validateForm()) return;
 
   const id = editId || 'subj-' + Date.now();
-  const daySel = document.getElementById('input-dl-day').value;
-  const monthSel = document.getElementById('input-dl-month').value;
-  const yearSel = document.getElementById('input-dl-year').value;
-  const deadlineStr = `${yearSel}-${String(monthSel).padStart(2, '0')}-${String(daySel).padStart(2, '0')}`;
+  const deadlineStr = `${inputDlYear.value}-${String(inputDlMonth.value).padStart(2, '0')}-${String(inputDlDay.value).padStart(2, '0')}`;
 
   const newSubj = {
     id,
-    name: document.getElementById('input-name').value.trim(),
-    time: parseInt(document.getElementById('input-time').value, 10),
+    name: inputName.value.trim(),
+    time: parseInt(inputTime.value, 10),
     deadline: deadlineStr,
-    priority: document.getElementById('input-priority').value
+    priority: inputPriority.value
   };
 
   if (editId) {
     const idx = subjects.findIndex(s => s.id === editId);
-    if (idx > -1) subjects[idx] = newSubj;
-    showToast('Предмет оновлено');
+    if (idx > -1) {
+      subjects[idx] = newSubj;
+      showToast('Предмет оновлено');
+    }
   } else {
     subjects.push(newSubj);
     showToast('Предмет додано');
@@ -248,29 +266,29 @@ function handleFormSubmit(e) {
 function cancelEdit() {
   editId = null;
   formSubject.reset();
-  document.getElementById('form-title').textContent = 'Додати предмет';
-  document.getElementById('btn-submit').textContent = 'Додати предмет';
-  document.getElementById('btn-cancel-edit').classList.add('hidden');
-  document.getElementById('btn-submit').disabled = true;
+  formTitle.textContent = 'Додати предмет';
+  btnSubmit.textContent = 'Додати предмет';
+  btnCancelEdit.classList.add('hidden');
+  btnSubmit.disabled = true;
   document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
 }
 
 function editSubject(id) {
   const subj = subjects.find(s => s.id === id);
   if (!subj) return;
-  
+
   editId = id;
-  document.getElementById('input-name').value = subj.name;
-  document.getElementById('input-time').value = subj.time;
+  inputName.value = subj.name;
+  inputTime.value = subj.time;
   const [y, m, d] = subj.deadline.split('-');
-  document.getElementById('input-dl-year').value = parseInt(y, 10);
-  document.getElementById('input-dl-month').value = parseInt(m, 10);
-  document.getElementById('input-dl-day').value = parseInt(d, 10);
-  document.getElementById('input-priority').value = subj.priority;
-  
-  document.getElementById('form-title').textContent = 'Редагувати предмет';
-  document.getElementById('btn-submit').textContent = 'Зберегти зміни';
-  document.getElementById('btn-cancel-edit').classList.remove('hidden');
+  inputDlYear.value = parseInt(y, 10);
+  inputDlMonth.value = parseInt(m, 10);
+  inputDlDay.value = parseInt(d, 10);
+  inputPriority.value = subj.priority;
+
+  formTitle.textContent = 'Редагувати предмет';
+  btnSubmit.textContent = 'Зберегти зміни';
+  btnCancelEdit.classList.remove('hidden');
   validateForm();
 }
 
@@ -289,8 +307,11 @@ function renderSubjects() {
       <div class="empty-state">
         <p>Список порожній. Додайте свій перший предмет.</p>
       </div>`;
+    setFormLocked(false);
     return;
   }
+
+  const isGenerated = schedule.length > 0;
 
   subjectListEl.innerHTML = subjects.map(s => `
     <div class="subject-item">
@@ -303,19 +324,22 @@ function renderSubjects() {
         </div>
       </div>
       <div class="subject-actions">
-        <button onclick="window.editSubject('${s.id}')" title="Редагувати">✏️</button>
-        <button class="btn-delete" onclick="window.deleteSubject('${s.id}')" title="Видалити">🗑️</button>
+        <button onclick="window.editSubject('${s.id}')" title="Редагувати" ${isGenerated ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>✏️</button>
+        <button class="btn-delete" onclick="window.deleteSubject('${s.id}')" title="Видалити" ${isGenerated ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>🗑️</button>
       </div>
     </div>
   `).join('');
+
+  // Також блокуємо всю форму додавання нових предметів
+  setFormLocked(isGenerated);
 }
 
 // Generation Logic
 function generateSchedule() {
   const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
-  
+
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
 
   // Classify all subjects into Cat V, B, A
   let catV = [];
@@ -357,7 +381,7 @@ function generateSchedule() {
 
   schedule = [];
   const MAX_PER_DAY = 240;
-  const dayLoads = new Array(365).fill(0); // Arbitrarily large array for schedule days
+  const dayLoads = new Array(2000).fill(0); // Arbitrarily large array for schedule days
   let sIdx = 0;
 
   // Helper to schedule a task trying to avoid loaded days
@@ -373,31 +397,33 @@ function generateSchedule() {
       let avail = MAX_PER_DAY - dayLoads[d];
       if (avail > 0) {
         let chunk = Math.min(remaining, avail, chunkLimit);
-        
+
         // Не створювати сесії менше 30 хвилин
         if (chunk < 30) continue;
-        
+
         // Уникати залишків менше 30 хвилин
         if (remaining - chunk > 0 && remaining - chunk < 30) {
           chunk = remaining - 30;
-          if (chunk < 30) continue; 
+          if (chunk < 30) continue;
         }
 
         // Не розбивати малі завдання (<120 хв) на шматки, щоб заповнити дрібні "вікна"
         if (remaining <= 120 && chunk < remaining) {
-          continue; 
+          continue;
         }
+
+        const absDate = new Date(today);
+        absDate.setDate(today.getDate() + d);
+        const dayDate = `${absDate.getFullYear()}-${String(absDate.getMonth() + 1).padStart(2, '0')}-${String(absDate.getDate()).padStart(2, '0')}`;
 
         schedule.push({
           id: `sess-${subj.id}-${sIdx++}`,
           subjectId: subj.id,
           name: subj.name,
           day: d,
-          dayName: getFriendlyDateFromOffset(d),
+          dayDate,
           duration: chunk,
-          status: 'Pending',
-          isHeavy: chunk > 120,
-          isCritical: false
+          status: 'Pending'
         });
         dayLoads[d] += chunk;
         remaining -= chunk;
@@ -408,32 +434,43 @@ function generateSchedule() {
     if (remaining > 0) {
       let squeezeChunkLimit = 120; // Try to use 120 min chunks for squeezing to keep sessions manageable
       while (remaining > 0) {
-        // Sort days by dayLoads ascending to pick the lightest day
         let sortedDays = [...days].sort((a, b) => dayLoads[a] - dayLoads[b]);
-        let d = sortedDays[0]; 
+        let d = sortedDays[0];
+
+        // Якщо залишок менше 30 хв, шукаємо існуючу сесію в БУДЬ-ЯКИЙ день, щоб не створювати нову мікро-сесію
+        if (remaining < 30) {
+          let anyExisting = schedule.find(s => s.subjectId === subj.id);
+          if (anyExisting) {
+            anyExisting.duration += remaining;
+            dayLoads[anyExisting.day] += remaining;
+            remaining = 0;
+            break; // Завершуємо розподіл цього предмета
+          }
+        }
+
         let chunk = Math.min(remaining, squeezeChunkLimit);
 
         // Уникати залишків менше 30 хвилин при "втисканні"
         if (remaining - chunk > 0 && remaining - chunk < 30) {
-          chunk = remaining - 30;
+          chunk = remaining; // Забираємо весь залишок, щоб не залишати хвости < 30 хв
         }
-        
+
         let existing = schedule.find(s => s.subjectId === subj.id && s.day === d);
         if (existing) {
           existing.duration += chunk;
-          if (existing.duration > 120) existing.isHeavy = true;
-          if (dayLoads[d] + chunk > 240) existing.isCritical = true;
         } else {
+          const absDate2 = new Date(today);
+          absDate2.setDate(today.getDate() + d);
+          const dayDate2 = `${absDate2.getFullYear()}-${String(absDate2.getMonth() + 1).padStart(2, '0')}-${String(absDate2.getDate()).padStart(2, '0')}`;
+
           schedule.push({
             id: `sess-${subj.id}-${sIdx++}`,
             subjectId: subj.id,
             name: subj.name,
             day: d,
-            dayName: getFriendlyDateFromOffset(d),
+            dayDate: dayDate2,
             duration: chunk,
-            status: 'Pending',
-            isHeavy: chunk > 120,
-            isCritical: (dayLoads[d] + chunk) > 240
+            status: 'Pending'
           });
         }
         dayLoads[d] += chunk;
@@ -458,6 +495,10 @@ function generateSchedule() {
   }
 
   saveSchedule();
+  renderSubjects(); // Оновити список: заблокувати форму та кнопки після генерації
+  // Скинути фільтр на «Всі»
+  filterBtns.forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-filter="All"]').classList.add('active');
   showToast('Розклад успішно згенеровано!');
   switchView('schedule');
   renderSchedule('All');
@@ -474,9 +515,9 @@ function renderSchedule(filter = 'All') {
   const grouped = {};
   schedule.forEach(s => {
     if (filter !== 'All' && s.status !== filter) return;
-    
+
     if (!grouped[s.day]) {
-      grouped[s.day] = { name: s.dayName, sessions: [], total: 0 };
+      grouped[s.day] = { name: getFriendlyDateFromStr(s.dayDate), sessions: [], total: 0 };
     }
     grouped[s.day].sessions.push(s);
     grouped[s.day].total += s.duration;
@@ -487,7 +528,7 @@ function renderSchedule(filter = 'All') {
     return;
   }
 
-  scheduleGridEl.innerHTML = Object.keys(grouped).sort((a,b)=>Number(a)-Number(b)).map(dKey => {
+  scheduleGridEl.innerHTML = Object.keys(grouped).sort((a, b) => Number(a) - Number(b)).map(dKey => {
     const day = grouped[dKey];
     return `
       <div class="day-column">

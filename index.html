@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Генератор навчального розкладу</title>
+  <meta name="description" content="Інтерактивний веб-застосунок для автоматизації планування навчального часу. Розподіляйте завдання, враховуючи дедлайни та пріоритети." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +16,7 @@
     <div class="header-content">
       <div class="logo">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-        <span>Study Planner</span>
+        <h1>Study Planner</h1>
       </div>
       <button id="btn-reset-demo" class="btn btn-outline btn-sm">Відновити демо-дані</button>
     </div>
@@ -31,8 +32,7 @@
         <div class="panel form-panel glass">
           <h2><span id="form-title">Додати предмет</span></h2>
           <form id="form-subject" novalidate>
-            <input type="hidden" id="input-id" />
-            
+
             <div class="form-group">
               <label for="input-name">Назва предмета/теми</label>
               <input type="text" id="input-name" placeholder="Наприклад: Вища математика" minlength="3" required />
@@ -42,8 +42,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="input-time">Час (хвилини)</label>
-                <input type="number" id="input-time" placeholder="120" min="15" max="600" step="15" required />
-                <div class="error-text" id="error-time">Від 15 до 600 хв</div>
+                <input type="number" id="input-time" placeholder="120" min="30" max="600" step="15" required />
+                <div class="error-text" id="error-time">Від 30 до 600 хв</div>
               </div>
 
               <div class="form-group">
@@ -58,7 +58,7 @@
             </div>
 
             <div class="form-group">
-              <label>Дедлайн</label>
+              <label for="input-dl-day">Дедлайн</label>
               <div class="form-row" style="gap: 8px; display: grid; grid-template-columns: 1fr 1.5fr 1.3fr;">
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                   <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">День</label>

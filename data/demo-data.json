@@ -3,28 +3,28 @@
     "id": "demo-1",
     "name": "Вища математика",
     "time": 400,
-    "deadline": "2026-05-06",
+    "deadline": "2026-05-10",
     "priority": "Високий"
   },
   {
     "id": "demo-2",
     "name": "Історія України",
     "time": 100,
-    "deadline": "2026-05-05",
+    "deadline": "2026-05-08",
     "priority": "Середній"
   },
   {
     "id": "demo-3",
     "name": "Програмування (JavaScript)",
     "time": 600,
-    "deadline": "2026-05-12",
+    "deadline": "2026-05-20",
     "priority": "Високий"
   },
   {
     "id": "demo-4",
     "name": "Англійська мова",
     "time": 180,
-    "deadline": "2026-05-15",
+    "deadline": "2026-05-25",
     "priority": "Низький"
   }
 ]

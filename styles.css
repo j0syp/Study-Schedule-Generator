@@ -53,6 +53,7 @@ h2 {
 
 /* Utilities */
 .hidden { display: none !important; }
+.active { display: block; }
 .glass {
   background: var(--panel-bg);
   backdrop-filter: blur(12px);
@@ -150,6 +151,12 @@ input:focus, select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+input:disabled, select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 select {
@@ -355,17 +362,6 @@ select {
   background: rgba(239, 68, 68, 0.1);
 }
 
-.error-box {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--text-error);
-  color: #fca5a5;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  text-align: center;
-  animation: slideIn 0.3s ease-out;
-}
 
 /* Schedule View */
 .schedule-header {

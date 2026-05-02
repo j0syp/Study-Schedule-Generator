@@ -21,8 +21,8 @@ We will use Vanilla HTML, CSS, and JavaScript.
 Using Plain HTML/CSS/JS without a build step makes the project incredibly simple to deploy to GitHub Pages (as a static folder). It removes dependency bloat and build configurations. The downside is lack of componentization (which is fine since the UI is small).
 
 ## Requirements touched
-- Overview: "Застосунок не повинен бути важким full-stack проєктом"
-- Non-functional limits: "Без реєстрації", "Без складної БД"
+- 2. Межі системи: "Авторизація та реєстрація користувачів" не входить у систему
+- 9. Припущення та обмеження: "зберігаючи виключно Vanilla JS + LocalStorage"
 
 ## Rejected options and rationale
 - Vite with React/TS was rejected because the UI state is not complex enough to warrant React. The forms are straightforward, and a simple DOM update suffices.

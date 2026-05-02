@@ -23,10 +23,10 @@ The user needs to add subjects and then view a generated schedule. These represe
 
 ## Consequences
 - Simple DOM toggling requires very little boilerplate. We don't need history management for this type of isolated tool.
-- The state model perfectly maps to the required output: flattening subjects into individual schedule chunks (sessions) allows tracking the completion state of each individual 120-minute (or less) block independently.
+- The state model perfectly maps to the required output: flattening subjects into individual schedule chunks (sessions) allows tracking the completion state of each individual 240-minute (or less) block independently.
 
 ## Requirements touched
-- FR4. Зміна стану об'єкта (Pending -> Completed/Missed on specific sessions)
+- FR4. Зміна стану (Pending -> Completed/Missed on specific sessions)
 - FR5. Фільтрація
 - BR4. Дроблення довгих сесій (necessitating a separate `Schedule Session` model from `Subject`)
 
