@@ -467,10 +467,25 @@ function renderSubjects() {
 
 // Generation Logic
 function generateSchedule() {
-  const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
+  if (subjects.length === 0) return;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Перевірка на застарілі дані
+  const hasExpiredSubjects = subjects.some(subj => {
+    if (!subj.deadline) return false;
+    const [y, m, d] = subj.deadline.split('-');
+    const dVal = new Date(y, m - 1, d);
+    return dVal < today;
+  });
+
+  if (hasExpiredSubjects) {
+    alert('Помилка генерації! У списку є предмети з протермінованими дедлайнами. Будь ласка, видаліть їх або оновіть дати.');
+    return;
+  }
+
+  const priorityWeight = { 'Високий': 3, 'Середній': 2, 'Низький': 1 };
 
   // Classify all subjects into Cat V, B, A
   let catV = [];
