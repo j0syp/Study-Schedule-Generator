@@ -71,6 +71,7 @@ function init() {
 
   // 2. Load data and setup UI
   loadData();
+  autoUpdatePastSessions(); // Перевірка пропущених за минулі дні
   setupEventListeners();
   renderSubjects(); // This will call setFormLocked
   checkTotalTime();
@@ -123,7 +124,20 @@ async function loadDemoData() {
   try {
     const res = await fetch('./data/demo-data.json');
     if (res.ok) {
-      subjects = await res.json();
+      const rawData = await res.json();
+      
+      // Розрахунок динамічних дедлайнів на основі зміщення
+      const today = new Date();
+      subjects = rawData.map(s => {
+        const d = new Date(today);
+        d.setDate(today.getDate() + (s.daysOffset || 0));
+        const deadlineStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        
+        // Видаляємо daysOffset та додаємо реальний deadline для збереження
+        const { daysOffset, ...rest } = s;
+        return { ...rest, deadline: deadlineStr };
+      });
+
       saveData();
       schedule = [];
       saveSchedule();
@@ -134,6 +148,29 @@ async function loadDemoData() {
     }
   } catch (e) {
     console.error('Failed to load demo data', e);
+  }
+}
+
+function autoUpdatePastSessions() {
+  if (schedule.length === 0) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let changed = false;
+
+  schedule.forEach(s => {
+    const [y, m, d] = s.dayDate.split('-');
+    const sessionDate = new Date(y, m - 1, d);
+    
+    // Якщо дата сесії в минулому і статус не "Готово" - ставимо "Пропуск"
+    if (sessionDate < today && s.status !== 'Completed' && s.status !== 'Missed') {
+      s.status = 'Missed';
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    saveSchedule();
   }
 }
 
@@ -177,8 +214,11 @@ function getFriendlyDateFromOffset(dayIndex) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  if (dayIndex === -2) return 'Позавчора';
+  if (dayIndex === -1) return 'Вчора';
   if (dayIndex === 0) return 'Сьогодні';
   if (dayIndex === 1) return 'Завтра';
+  if (dayIndex === 2) return 'Післязавтра';
 
   const d = new Date(today);
   d.setDate(today.getDate() + dayIndex);
@@ -188,7 +228,7 @@ function getFriendlyDateFromOffset(dayIndex) {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
 
   const datePart = `${wDay}, ${dd}.${mm}`;
-  return dayIndex < 0 ? `Минуле (${datePart})` : datePart;
+  return dayIndex < -2 ? `Минуле (${datePart})` : datePart;
 }
 
 function getFriendlyDateFromStr(dateStr) {
