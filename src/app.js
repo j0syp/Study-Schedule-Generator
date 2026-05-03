@@ -669,6 +669,9 @@ function renderSchedule(filter = 'All') {
 
   scheduleGridEl.innerHTML = Object.keys(grouped).sort((a, b) => Number(a) - Number(b)).map(dKey => {
     const day = grouped[dKey];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return `
       <div class="day-column">
         <div class="day-header">
@@ -678,19 +681,29 @@ function renderSchedule(filter = 'All') {
         ${day.total > 240 ? '<span class="warning-critical" style="margin-bottom: 0.5rem;">⚠️ Потрібно краще розподіляти свій час!</span>' : ''}
         ${day.total >= 210 && day.total <= 240 ? '<span class="warning-heavy-load" style="margin-bottom: 0.5rem;">💡 Настанова: не забувайте робити перерви!</span>' : ''}
         <div class="session-list">
-          ${day.sessions.map(sess => `
-            <div class="session-card status-${sess.status}">
-              <div class="session-header">
-                <h4>${escapeHTML(sess.name)}</h4>
-                <span class="session-duration">${sess.duration} хв</span>
+          ${day.sessions.map(sess => {
+            const [y, m, d] = sess.dayDate.split('-');
+            const sessionDate = new Date(y, m - 1, d);
+            const isPast = sessionDate < today;
+
+            return `
+              <div class="session-card status-${sess.status}">
+                <div class="session-header">
+                  <h4>${escapeHTML(sess.name)}</h4>
+                  <span class="session-duration">${sess.duration} хв</span>
+                </div>
+                <div class="session-controls">
+                  <button 
+                    class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" 
+                    ${isPast ? 'disabled title="Неможливо очікувати на виконання в минулому"' : ''}
+                    onclick="window.updateStatus('${sess.id}', 'Pending')"
+                  >Очікує</button>
+                  <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
+                  <button class="session-btn mark-missed ${sess.status === 'Missed' ? 'active-Missed' : ''}" onclick="window.updateStatus('${sess.id}', 'Missed')">Пропуск</button>
+                </div>
               </div>
-              <div class="session-controls">
-                <button class="session-btn mark-pending ${sess.status === 'Pending' ? 'active-Pending' : ''}" onclick="window.updateStatus('${sess.id}', 'Pending')">Очікує</button>
-                <button class="session-btn mark-completed ${sess.status === 'Completed' ? 'active-Completed' : ''}" onclick="window.updateStatus('${sess.id}', 'Completed')">Готово</button>
-                <button class="session-btn mark-missed ${sess.status === 'Missed' ? 'active-Missed' : ''}" onclick="window.updateStatus('${sess.id}', 'Missed')">Пропуск</button>
-              </div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       </div>
     `;
@@ -700,6 +713,18 @@ function renderSchedule(filter = 'All') {
 function updateStatus(sessionId, newStatus) {
   const sess = schedule.find(s => s.id === sessionId);
   if (sess) {
+    // Додаткова перевірка: не дозволяємо ставити "Очікує" для минулого
+    if (newStatus === 'Pending') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [y, m, d] = sess.dayDate.split('-');
+      const sessionDate = new Date(y, m - 1, d);
+      if (sessionDate < today) {
+        showToast('Неможливо змінити статус на "Очікує" для минулих днів');
+        return;
+      }
+    }
+
     sess.status = newStatus;
     saveSchedule();
     const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
