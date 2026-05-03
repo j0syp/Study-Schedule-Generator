@@ -551,6 +551,17 @@ select {
   transition: var(--transition);
 }
 
+.session-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.session-btn:disabled:hover {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border-color: var(--panel-border) !important;
+}
+
 .session-btn.mark-completed:hover, .session-btn.active-Completed {
   background: rgba(16, 185, 129, 0.2);
   color: var(--success);
