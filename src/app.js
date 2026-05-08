@@ -256,7 +256,7 @@ function validateForm(showErrors = true) {
 
   const timeVal = parseInt(inputTime.value, 10);
   if (isNaN(timeVal)) {
-    if (showErrors && inputTime.value !== "") inputTime.parentElement.classList.add('invalid');
+    if (showErrors) inputTime.parentElement.classList.add('invalid');
     isValid = false;
   } else {
     inputTime.parentElement.classList.remove('invalid');
@@ -468,6 +468,7 @@ function renderSubjects() {
 // Generation Logic
 function generateSchedule() {
   if (subjects.length === 0) return;
+  cancelEdit(); // Скидання стану форми перед блокуванням
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
