@@ -18,6 +18,8 @@ const btnBack = document.getElementById('btn-back');
 const btnClearSchedule = document.getElementById('btn-clear-schedule');
 const toastEl = document.getElementById('toast');
 const btnResetDemo = document.getElementById('btn-reset-demo');
+const btnAbout = document.getElementById('btn-about');
+const aboutDialog = document.getElementById('about-dialog');
 const btnDeleteAllSubjects = document.getElementById('btn-delete-all');
 const filterBtns = document.querySelectorAll('.filter-btn');
 
@@ -314,6 +316,12 @@ function setupEventListeners() {
   btnCancelEdit.addEventListener('click', cancelEdit);
 
   btnResetDemo.addEventListener('click', loadDemoData);
+  
+  if (btnAbout && aboutDialog) {
+    btnAbout.addEventListener('click', () => {
+      aboutDialog.showModal();
+    });
+  }
 
   btnDeleteAllSubjects.addEventListener('click', deleteAllSubjects);
 

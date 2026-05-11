@@ -18,7 +18,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
         <h1>Study Planner</h1>
       </div>
-      <button id="btn-reset-demo" class="btn btn-outline btn-sm">Відновити демо-дані</button>
+      <div style="display: flex; gap: 8px;">
+        <button id="btn-about" class="btn btn-outline btn-sm">Про застосунок</button>
+        <button id="btn-reset-demo" class="btn btn-outline btn-sm">Відновити демо-дані</button>
+      </div>
     </div>
   </header>
 
@@ -167,6 +170,19 @@
 
   <!-- Notification Toast -->
   <div id="toast" class="toast hidden"></div>
+
+  <!-- About Dialog -->
+  <dialog id="about-dialog" class="glass" style="border: 1px solid var(--panel-border); padding: 2rem; border-radius: var(--border-radius); max-width: 500px; color: var(--text-main); margin: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+    <h2 style="margin-bottom: 1rem;">Про застосунок</h2>
+    <p style="margin-bottom: 1.5rem; line-height: 1.6;">
+      Інтерактивний веб-застосунок для автоматизації планування навчального часу. Розподіляйте завдання, враховуючи дедлайни та пріоритети.
+    </p>
+    <div style="text-align: right;">
+      <form method="dialog">
+        <button class="btn btn-primary">Закрити</button>
+      </form>
+    </div>
+  </dialog>
 
   <script type="module" src="./src/app.js"></script>
 </body>
